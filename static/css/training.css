@@ -46,6 +46,16 @@
 .training-options b{font-size:9px}
 .training-options strong{font-size:13px;letter-spacing:-.2px}
 .training-options small{display:block;color:#99a5ad;font-size:9px;margin-top:4px}
+.training-config-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:2px}
+.training-config-field{min-height:88px;display:flex;flex-direction:column;justify-content:center;padding:11px 13px;border:1px solid #e8edf0;border-radius:10px;background:#f8fafb}
+.training-config-field>b{color:#9aa5ae;font:9px "DM Mono",monospace;letter-spacing:.5px;text-transform:uppercase}
+.training-config-field>span{display:flex;align-items:center;gap:5px;margin-top:5px}
+.training-config-field input{width:82px;min-height:31px;margin:0;padding:5px 7px;border:1px solid #dce5eb;border-radius:7px;background:#fff;color:var(--ink);font-size:13px;font-weight:700;outline:0}
+.training-config-field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #edf4ff}
+.training-config-field em{font-style:normal;color:#71808b;font-size:11px}
+.training-config-field small{display:block;color:#99a5ad;font-size:9px;margin-top:4px}
+.config-validation-note{margin:0;color:#8d9aa3;font-size:10px;line-height:1.5}
+.config-validation-note strong{color:#5e7180}
 .training-form .button{min-height:46px;margin-top:1px}
 .form-note{display:flex;align-items:flex-start;gap:7px;margin:16px 0 0}
 .note-dot{width:15px;height:15px;display:grid;place-items:center;flex:0 0 15px;border:1px solid #cbd9e4;border-radius:50%;font:9px Georgia,serif;color:#7890a3}

@@ -4,7 +4,7 @@ from django.conf import settings
 from PIL import Image, ImageStat
 
 from apps.training.models import TrainingRun
-from apps.training.services.trainer import _build_model
+from apps.training.services.trainer import _build_model, _image_tensor
 
 
 def _latest_checkpoint():
@@ -40,26 +40,29 @@ def _analyze_with_checkpoint(uploaded_file):
     if not classes or not checkpoint.get("state_dict"):
         raise ValueError("The selected training checkpoint is missing its model metadata.")
 
+    model_version = int(checkpoint.get("model_version", 1))
     model = _build_model(
         torch,
         nn,
         checkpoint["architecture"],
         len(classes),
-        model_version=int(checkpoint.get("model_version", 1)),
+        model_version=model_version,
     )
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
 
     uploaded_file.seek(0)
     with Image.open(uploaded_file) as image:
-        image = image.convert("RGB").resize((image_size, image_size))
-        pixels = list(image.getdata())
-    values = torch.tensor(pixels, dtype=torch.float32).reshape(image_size, image_size, 3)
-    tensor = values.permute(2, 0, 1).div(255.0).unsqueeze(0)
+        tensor = _image_tensor(torch, image, image_size, normalize=model_version >= 3)
+    tensor = tensor.unsqueeze(0)
 
     temperature = max(0.5, min(3.0, float(checkpoint.get("temperature", 1.0))))
     with torch.no_grad():
-        probabilities = torch.softmax(model(tensor) / temperature, dim=1)[0]
+        # Average the original and horizontally flipped view. Both the RPS
+        # gestures and lesion images are orientation-invariant, so this
+        # reduces sensitivity to the camera angle without changing the label.
+        logits = (model(tensor) + model(torch.flip(tensor, dims=(3,)))) / 2
+        probabilities = torch.softmax(logits / temperature, dim=1)[0]
     confidence, predicted_index = torch.max(probabilities, dim=0)
     predicted_index = int(predicted_index.item())
     if predicted_index >= len(classes):

@@ -46,11 +46,29 @@
           <option value="mobilenet_v3">MobileNetV3 · efficient</option>
         </select>
       </label>
-      <div class="training-options" aria-label="Training protocol">
-        <span><b>Split</b><strong>70 / 15 / 15</strong><small>Stratified</small></span>
-        <span><b>Epochs</b><strong>20</strong><small>Maximum</small></span>
-         <span><b>Device</b><strong>CPU</strong><small>Deterministic run</small></span>
+      <div class="training-config-grid" aria-label="Training protocol">
+        <label class="training-config-field">
+          <b>Training split</b>
+          <span><input type="number" name="train_split" value="{{ split_defaults.train }}" min="1" max="98" step="1" inputmode="numeric" required> <em>%</em></span>
+          <small>Stratified training data</small>
+        </label>
+        <label class="training-config-field">
+          <b>Validation split</b>
+          <span><input type="number" name="validation_split" value="{{ split_defaults.validation }}" min="1" max="98" step="1" inputmode="numeric" required> <em>%</em></span>
+          <small>Model tuning data</small>
+        </label>
+        <label class="training-config-field">
+          <b>Test split</b>
+          <span><input type="number" name="test_split" value="{{ split_defaults.test }}" min="1" max="98" step="1" inputmode="numeric" required> <em>%</em></span>
+          <small>Held-out evaluation</small>
+        </label>
+        <label class="training-config-field">
+          <b>Epochs</b>
+          <span><input type="number" name="epochs" value="{{ epochs_default }}" min="1" max="200" step="1" inputmode="numeric" required></span>
+          <small>1–200 training passes</small>
+        </label>
       </div>
+      <p class="config-validation-note">Split percentages must total <strong>100%</strong>. Training runs on CPU with a deterministic pipeline.</p>
       <button class="button button-primary button-full">Run training experiment <span>→</span></button>
     </form>
     <p class="form-note"><span class="note-dot">i</span> Training runs on CPU with a deterministic image classifier and saves a checkpoint for this experiment.</p>

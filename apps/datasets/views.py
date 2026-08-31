@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db import transaction
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Dataset
 from .services.pipeline import run_dataset_pipeline
@@ -38,6 +39,20 @@ def dataset_detail(request, pk):
     return render(request, "datasets/details.html", {"dataset": dataset, "page_title": dataset.name})
 
 
+def dataset_delete(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    dataset = get_object_or_404(Dataset, pk=pk)
+    dataset_name = dataset.name
+    uploaded_file = dataset.uploaded_file
+    dataset.delete()
+    if uploaded_file:
+        uploaded_file.delete(save=False)
+    messages.success(request, f"{dataset_name} was deleted from your workspace.")
+    return redirect("datasets:list")
+
+
 def dataset_audit(request, pk):
     dataset = get_object_or_404(Dataset, pk=pk)
     if request.method == "POST":
@@ -50,4 +65,30 @@ def dataset_audit(request, pk):
     audit = dataset.audit or {"duplicate_rate": "Pending", "quality_score": "—", "leakage_risk": "Not audited",
                               "label_consistency": "Pending", "imbalance_ratio": "Pending",
                               "recommendation": "Run an audit to generate recommendations."}
-    return render(request, "datasets/audit.html", {"dataset": dataset, "audit": audit, "page_title": "Dataset audit"})
+    stages = audit.get("stages", {})
+    progress = {
+        "profile": bool(dataset.profile),
+        "quality": bool(audit.get("quality_score") not in (None, "—", "Pending")),
+        "leakage": stages.get("leakage") == "completed",
+        "ready": dataset.status == "ready" and stages.get("imbalance") == "completed",
+    }
+    completed_steps = sum(progress.values())
+    progress_percent = {0: 0, 1: 0, 2: 33, 3: 66, 4: 100}[completed_steps]
+    if progress["ready"]:
+        current_step = "ready"
+    elif progress["leakage"]:
+        current_step = "ready"
+    elif progress["quality"]:
+        current_step = "leakage"
+    elif progress["profile"]:
+        current_step = "quality"
+    else:
+        current_step = "profile"
+    return render(request, "datasets/audit.html", {
+        "dataset": dataset,
+        "audit": audit,
+        "progress": progress,
+        "current_step": current_step,
+        "progress_percent": progress_percent,
+        "page_title": "Dataset audit",
+    })

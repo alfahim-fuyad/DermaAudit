@@ -1,8 +1,11 @@
 import io
+import os
+import tempfile
 import zipfile
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 from PIL import Image
 
 from .services.validator import validate_upload
@@ -12,6 +15,7 @@ from .services.bias import analyze_bias
 from .services.auditor import build_audit
 from .models import Dataset
 from .services.pipeline import run_dataset_pipeline
+from apps.training.models import TrainingRun
 
 
 def _image_bytes(color="white", size=(64, 48)):
@@ -157,3 +161,75 @@ class DatasetPipelineTests(TestCase):
         self.assertEqual(result.pipeline["status"], "completed")
         self.assertNotIn("records", result.validation)
         self.assertEqual(result.audit["leakage_risk"], "Low")
+
+
+class DatasetAuditViewTests(TestCase):
+    def test_completed_audit_marks_all_progress_steps_complete(self):
+        dataset = Dataset.objects.create(
+            name="Completed audit",
+            status="ready",
+            profile={"formats": "PNG"},
+            audit={
+                "quality_score": 94,
+                "stages": {
+                    "leakage": "completed",
+                    "imbalance": "completed",
+                },
+            },
+        )
+
+        response = self.client.get(reverse("datasets:audit", args=[dataset.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["progress_percent"], 100)
+        self.assertTrue(all(response.context["progress"].values()))
+        self.assertContains(response, 'class="audit-progress is-complete"')
+        self.assertEqual(response.context["current_step"], "ready")
+
+    def test_unrun_audit_starts_at_profile_step(self):
+        dataset = Dataset.objects.create(name="New audit", status="uploaded")
+
+        response = self.client.get(reverse("datasets:audit", args=[dataset.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["progress_percent"], 0)
+        self.assertEqual(response.context["current_step"], "profile")
+        self.assertContains(response, 'class="audit-step active"')
+
+
+class DatasetDeletionTests(TestCase):
+    def test_delete_requires_post(self):
+        dataset = Dataset.objects.create(
+            name="Protected dataset",
+            uploaded_file=SimpleUploadedFile("protected.zip", b"archive", content_type="application/zip"),
+        )
+
+        response = self.client.get(reverse("datasets:delete", args=[dataset.pk]))
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Dataset.objects.filter(pk=dataset.pk).exists())
+
+    def test_delete_removes_dataset_archive_and_training_runs(self):
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                dataset = Dataset.objects.create(
+                    name="Removable dataset",
+                    uploaded_file=SimpleUploadedFile(
+                        "removable.zip",
+                        b"archive",
+                        content_type="application/zip",
+                    ),
+                )
+                TrainingRun.objects.create(dataset=dataset)
+                stored_path = dataset.uploaded_file.path
+
+                response = self.client.post(
+                    reverse("datasets:delete", args=[dataset.pk]),
+                    follow=True,
+                )
+
+                self.assertRedirects(response, reverse("datasets:list"))
+                self.assertFalse(Dataset.objects.filter(pk=dataset.pk).exists())
+                self.assertFalse(TrainingRun.objects.filter(dataset_id=dataset.pk).exists())
+                self.assertFalse(os.path.exists(stored_path))
+                self.assertContains(response, "Removable dataset was deleted from your workspace.")
