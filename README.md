@@ -13,7 +13,7 @@ The project uses SQLite when `DATABASE_URL` is not set and PostgreSQL/Neon when 
 
 ## Scope and model status
 
-The interface is designed for research and screening support only; it is not a medical diagnostic device. The prediction screen validates images and provides a clearly labelled preview analysis until a trained Torch/Torchvision checkpoint is registered. The training workspace records reproducible benchmark configurations and is ready for a production checkpoint runner.
+The interface is designed for research and screening support only; it is not a medical diagnostic device. The prediction screen validates images and provides a clearly labelled preview analysis until a trained checkpoint is registered for inference. Training experiments now run a deterministic CPU image classifier over the audited ZIP, report held-out metrics, and save a checkpoint under `media/checkpoints/`.
 
 ## Technology
 

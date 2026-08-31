@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 from apps.datasets.models import Dataset
 from .models import TrainingRun
+from .services.trainer import run_training
 
 
 def training_home(request):
@@ -23,16 +24,37 @@ def start_training(request):
             run = TrainingRun.objects.create(
                 dataset=dataset,
                 architecture=architecture,
-                status="ready",
+                status="running",
                 config={
                     "epochs": 20,
                     "split": "70 / 15 / 15",
-                    "device": "CPU preview",
-                    "execution": "queued",
+                    "device": "CPU",
+                    "execution": "running",
                     "dataset_pipeline": dataset.pipeline,
                 },
             )
-            messages.success(request, f"{run.get_architecture_display()} benchmark queued for training.")
+            try:
+                result = run_training(run)
+            except Exception as exc:
+                run.status = "failed"
+                run.config = {
+                    **run.config,
+                    "execution": "failed",
+                    "error": str(exc),
+                }
+                run.save(update_fields=["status", "config"])
+                messages.error(request, f"Training failed: {exc}")
+            else:
+                run.status = "completed"
+                run.accuracy = result.pop("accuracy")
+                run.macro_f1 = result.pop("macro_f1")
+                run.config = {**run.config, **result}
+                run.save(update_fields=["status", "accuracy", "macro_f1", "config"])
+                messages.success(
+                    request,
+                    f"{run.get_architecture_display()} training completed "
+                    f"(accuracy {run.accuracy:.3f}, macro-F1 {run.macro_f1:.3f}).",
+                )
     return redirect("training:home")
 
 

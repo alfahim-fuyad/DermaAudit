@@ -49,11 +49,11 @@
       <div class="training-options" aria-label="Training protocol">
         <span><b>Split</b><strong>70 / 15 / 15</strong><small>Stratified</small></span>
         <span><b>Epochs</b><strong>20</strong><small>Maximum</small></span>
-        <span><b>Device</b><strong>CPU preview</strong><small>Safe mode</small></span>
+         <span><b>Device</b><strong>CPU</strong><small>Deterministic run</small></span>
       </div>
-      <button class="button button-primary button-full">Save benchmark configuration <span>→</span></button>
+      <button class="button button-primary button-full">Run training experiment <span>→</span></button>
     </form>
-    <p class="form-note"><span class="note-dot">i</span> Connect a trained Torch checkpoint in production to run full deep-learning training.</p>
+    <p class="form-note"><span class="note-dot">i</span> Training runs on CPU with a deterministic image classifier and saves a checkpoint for this experiment.</p>
   </div>
 
   <div class="panel architecture-panel">
@@ -105,7 +105,7 @@
           <span>{{ run.dataset.name|default:"Unassigned" }}</span>
           <span>{% if run.status == "completed" %}{{ run.accuracy|floatformat:3 }}{% else %}<em class="pending-value">Pending</em>{% endif %}</span>
           <span>{% if run.status == "completed" %}{{ run.macro_f1|floatformat:3 }}{% else %}<em class="pending-value">Pending</em>{% endif %}</span>
-          <span>{% if run.config.execution == "queued" %}<b class="status status-queued">Queued</b>{% else %}<b class="status status-{{ run.status }}">{{ run.get_status_display }}</b>{% endif %}</span>
+          <span><b class="status status-{{ run.status }}">{{ run.get_status_display }}</b></span>
         </div>
       {% endfor %}
     </div>

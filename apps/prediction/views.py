@@ -18,8 +18,11 @@ def predict(request):
                                                  review_required=analysis["review_required"],
                                                  explanation=analysis)
                 return redirect("prediction:result", pk=item.pk)
-            except Exception:
-                messages.error(request, "That file could not be read as an image. Use JPG, PNG, or WEBP.")
+            except Exception as exc:
+                if isinstance(exc, (ValueError, OSError)):
+                    messages.error(request, str(exc))
+                else:
+                    messages.error(request, "That file could not be read as an image. Use JPG, PNG, or WEBP.")
     return render(request, "prediction/predict.html", {"page_title": "New prediction"})
 
 
