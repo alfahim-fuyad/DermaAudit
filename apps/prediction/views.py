@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Prediction
-from .services.predictor import analyze_image
+from .services.predictor import _latest_checkpoint, analyze_image
 
 
 def predict(request):
@@ -23,7 +23,12 @@ def predict(request):
                     messages.error(request, str(exc))
                 else:
                     messages.error(request, "That file could not be read as an image. Use JPG, PNG, or WEBP.")
-    return render(request, "prediction/predict.html", {"page_title": "New prediction"})
+    active_model, _checkpoint_path = _latest_checkpoint()
+    return render(
+        request,
+        "prediction/predict.html",
+        {"page_title": "New prediction", "active_model": active_model},
+    )
 
 
 def result(request, pk):

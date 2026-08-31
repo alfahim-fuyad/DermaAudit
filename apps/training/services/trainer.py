@@ -59,22 +59,39 @@ def _read_images(dataset, records):
     return samples
 
 
-def _build_model(torch, nn, architecture, class_count):
+def _build_model(torch, nn, architecture, class_count, model_version=2):
     widths = {
         "efficientnet_b0": (16, 32),
         "resnet50": (24, 48),
         "mobilenet_v3": (8, 16),
     }
     first_width, second_width = widths[architecture]
+    if model_version == 1:
+        return nn.Sequential(
+            nn.Conv2d(3, first_width, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(first_width, second_width, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Flatten(),
+            nn.Linear(second_width, class_count),
+        )
     return nn.Sequential(
         nn.Conv2d(3, first_width, kernel_size=3, padding=1),
         nn.ReLU(),
         nn.MaxPool2d(2),
         nn.Conv2d(first_width, second_width, kernel_size=3, padding=1),
         nn.ReLU(),
-        nn.AdaptiveAvgPool2d((1, 1)),
+        nn.MaxPool2d(2),
+        nn.Conv2d(second_width, second_width * 2, kernel_size=3, padding=1),
+        nn.ReLU(),
+        nn.AdaptiveAvgPool2d((4, 4)),
         nn.Flatten(),
-        nn.Linear(second_width, class_count),
+        nn.Linear(second_width * 2 * 4 * 4, second_width * 2),
+        nn.ReLU(),
+        nn.Dropout(0.2),
+        nn.Linear(second_width * 2, class_count),
     )
 
 
@@ -94,17 +111,41 @@ def _tensor_dataset(torch, samples, label_to_index):
     return torch.utils.data.TensorDataset(torch.stack(images), torch.tensor(labels))
 
 
+def _collect_outputs(torch, model, data_loader):
+    if not data_loader:
+        return None, None
+    model.eval()
+    logits, actual = [], []
+    with torch.no_grad():
+        for images, targets in data_loader:
+            logits.append(model(images))
+            actual.append(targets)
+    if not logits:
+        return None, None
+    return torch.cat(logits), torch.cat(actual)
+
+
+def _fit_temperature(torch, logits, targets):
+    """Pick a deterministic temperature that minimizes held-out NLL."""
+    if logits is None or targets is None or len(targets) < 2:
+        return 1.0
+    loss_function = torch.nn.CrossEntropyLoss()
+    candidates = [0.5 + index * 0.05 for index in range(51)]
+    losses = [
+        float(loss_function(logits / temperature, targets).item())
+        for temperature in candidates
+    ]
+    return round(candidates[min(range(len(losses)), key=losses.__getitem__)], 2)
+
+
 def _evaluate(torch, model, data_loader, labels, class_count):
     from sklearn.metrics import accuracy_score, f1_score
 
-    if not data_loader:
+    logits, actual_tensor = _collect_outputs(torch, model, data_loader)
+    if logits is None:
         return 0.0, 0.0
-    model.eval()
-    predictions, actual = [], []
-    with torch.no_grad():
-        for images, targets in data_loader:
-            predictions.extend(model(images).argmax(dim=1).tolist())
-            actual.extend(targets.tolist())
+    predictions = logits.argmax(dim=1).tolist()
+    actual = actual_tensor.tolist()
     return (
         float(accuracy_score(actual, predictions)),
         float(f1_score(actual, predictions, labels=list(range(class_count)), average="macro", zero_division=0)),
@@ -153,7 +194,7 @@ def run_training(run):
         if test_data else None
     )
 
-    model = _build_model(torch, nn, run.architecture, len(classes))
+    model = _build_model(torch, nn, run.architecture, len(classes), model_version=2)
     class_counts = [sum(1 for _, label in train_samples if label == class_name) for class_name in classes]
     weights = torch.tensor(
         [len(train_samples) / max(1, len(classes) * count) for count in class_counts],
@@ -178,6 +219,9 @@ def run_training(run):
     evaluation_loader = test_loader or validation_loader or train_loader
     evaluation_split = "test" if test_loader else "validation" if validation_loader else "training"
     accuracy, macro_f1 = _evaluate(torch, model, evaluation_loader, classes, len(classes))
+    calibration_loader = validation_loader or test_loader
+    calibration_logits, calibration_targets = _collect_outputs(torch, model, calibration_loader)
+    temperature = _fit_temperature(torch, calibration_logits, calibration_targets)
 
     checkpoint_dir = Path(settings.MEDIA_ROOT) / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -185,8 +229,10 @@ def run_training(run):
     torch.save(
         {
             "architecture": run.architecture,
+            "model_version": 2,
             "classes": classes,
             "image_size": IMAGE_SIZE,
+            "temperature": temperature,
             "state_dict": model.state_dict(),
         },
         checkpoint_path,
@@ -204,6 +250,8 @@ def run_training(run):
         "classes": classes,
         "device": "CPU",
         "execution": "completed",
+        "model_version": 2,
+        "temperature": temperature,
         "checkpoint": str(checkpoint_path.relative_to(settings.MEDIA_ROOT)),
         "final_loss": epoch_losses[-1],
         "loss_history": epoch_losses,
