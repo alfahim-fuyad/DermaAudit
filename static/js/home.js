@@ -52,25 +52,57 @@
     if (!reduceMotion) scanTimer = window.setInterval(advanceScan, 4200);
   }
 
-  const domains = {
-    health: { name: "Skin & health imaging", description: "Your workspace is optimized for labeled medical images and careful human review.", classes: "7" },
-    environment: { name: "Plant & environment", description: "Image classification for crop health, field conditions, and environmental signals.", classes: "12" },
-    vision: { name: "General visual research", description: "Compatible with other labeled image sets when classes and metadata are clear.", classes: "8" }
-  };
-  const sampleCount = document.querySelector("#radarSampleCount");
-  page.querySelectorAll(".dataset-filter").forEach((filter) => filter.addEventListener("click", () => {
+   const radarDataElement = document.querySelector("#radarData");
+   let radarData = radarDataElement ? JSON.parse(radarDataElement.textContent) : null;
+   const sampleCount = document.querySelector("#radarSampleCount");
+   const radarClassCount = document.querySelector("#radarClassCount");
+   const radarDomainName = document.querySelector("#radarDomainName");
+   const radarDomainDescription = document.querySelector("#radarDomainDescription");
+   const radarTimestamp = document.querySelector("#radarTimestamp");
+   const radarFootnote = document.querySelector("#radarFootnote");
+   const renderRadarDomain = (domainKey) => {
+     const domain = radarData?.domains?.[domainKey];
+     if (!domain) return;
+     radarDomainName.textContent = domain.name;
+     radarDomainDescription.textContent = domain.description;
+     sampleCount.textContent = domain.dataset_count;
+     radarClassCount.textContent = domain.class_count;
+     radarTimestamp.textContent = radarData.synced_label;
+     radarFootnote.textContent = radarData.footnote;
+     page.querySelectorAll(".dataset-node").forEach((node) => {
+       const nodeDomain = node.dataset.radarNode;
+       node.classList.toggle("is-empty", Boolean(nodeDomain && !radarData.domains[nodeDomain]?.dataset_count));
+     });
+   };
+   const setActiveDomain = (filter) => {
     page.querySelectorAll(".dataset-filter").forEach((item) => {
       const active = item === filter;
       item.classList.toggle("is-active", active);
       item.setAttribute("aria-selected", active ? "true" : "false");
     });
-    const domain = domains[filter.dataset.domain];
-    document.querySelector("#radarDomainName").textContent = domain.name;
-    document.querySelector("#radarDomainDescription").textContent = domain.description;
-    document.querySelector("#radarClassCount").textContent = domain.classes;
-    document.querySelector("#radarTimestamp").textContent = "Signal refreshed";
-    window.setTimeout(() => { document.querySelector("#radarTimestamp").textContent = "Synced just now"; }, 1800);
-  }));
+     renderRadarDomain(filter.dataset.domain);
+   };
+   page.querySelectorAll(".dataset-filter").forEach((filter) => filter.addEventListener("click", () => setActiveDomain(filter)));
+   const initialFilter = page.querySelector(`.dataset-filter[data-domain="${radarData?.primary_domain || "health"}"]`);
+   if (initialFilter) setActiveDomain(initialFilter);
+   const radarEndpoint = page.dataset.radarEndpoint;
+   const refreshRadar = async () => {
+     if (!radarEndpoint) return;
+     try {
+       const response = await fetch(radarEndpoint, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+       if (!response.ok) throw new Error(`Radar request failed: ${response.status}`);
+       radarData = await response.json();
+       page.querySelectorAll(".dataset-filter").forEach((filter) => {
+         const count = radarData.domains[filter.dataset.domain]?.dataset_count ?? 0;
+         filter.querySelector("b").textContent = String(count).padStart(2, "0");
+       });
+       const selectedFilter = page.querySelector(".dataset-filter.is-active") || initialFilter;
+       if (selectedFilter) setActiveDomain(selectedFilter);
+     } catch (error) {
+       console.warn("Live dataset radar refresh unavailable.", error);
+     }
+   };
+   if (radarEndpoint) window.setInterval(refreshRadar, 15000);
 
   const helpSteps = [...page.querySelectorAll(".help-step")];
   const helpNext = document.querySelector("#helpNext");

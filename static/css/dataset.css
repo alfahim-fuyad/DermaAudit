@@ -20,5 +20,9 @@
 .button-danger{border:1px solid #f0caca;background:#fff7f7;color:#b34f4f}
 .button-danger:hover{border-color:#d99292;background:#fff0f0;color:#9e3e3e}
 .page-intro-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-chip{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 11px;border:1px solid #dce5eb;border-radius:10px;background:#fff;color:#657783;font:500 10px "DM Mono",monospace;letter-spacing:.15px;white-space:nowrap;box-shadow:0 3px 10px rgba(38,63,88,.04);transition:.2s}
+.filter-chip>i{display:grid;place-items:center;width:19px;height:19px;border-radius:6px;background:#edf4ff;color:var(--blue);font-style:normal;font-size:11px}
+.filter-chip>b{margin-left:2px;color:#91a0aa;font-size:13px;line-height:1;transform:translateY(-1px)}
+.filter-chip:hover{border-color:#a9c8f5;background:#fbfdff;color:var(--blue);box-shadow:0 5px 14px rgba(47,120,238,.08)}
 @media(max-width:720px){.dataset-name{min-width:190px}.dropzone,.prediction-dropzone{min-height:190px}}
 @media(max-width:720px){.page-intro-actions{width:100%}.page-intro-actions .button{flex:1}}

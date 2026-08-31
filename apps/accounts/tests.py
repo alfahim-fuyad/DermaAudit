@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.datasets.models import Dataset
 from .models import Profile
 
 
@@ -71,3 +72,47 @@ class AuthenticationFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "That email or password was not recognised.")
         self.assertNotIn("_auth_user_id", self.client.session)
+
+
+class OverviewRadarTests(TestCase):
+    def test_radar_uses_live_dataset_counts_and_labels(self):
+        Dataset.objects.create(
+            name="Dermatology screening set",
+            sample_count=24,
+            classes=["melanoma", "nevus", "benign"],
+        )
+        Dataset.objects.create(
+            name="Field crop health set",
+            sample_count=10,
+            classes=["healthy leaf", "rust"],
+        )
+        Dataset.objects.create(
+            name="Object benchmark",
+            sample_count=8,
+            classes=["cup", "book"],
+        )
+
+        response = self.client.get(reverse("accounts:home"))
+        radar = response.context["radar_data"]
+
+        self.assertEqual(radar["total_dataset_count"], 3)
+        self.assertEqual(radar["total_sample_count"], 42)
+        self.assertEqual(radar["total_class_count"], 7)
+        self.assertEqual(radar["primary_domain"], "health")
+        self.assertEqual(radar["domains"]["health"]["dataset_count"], 1)
+        self.assertEqual(radar["domains"]["health"]["class_count"], 3)
+        self.assertEqual(radar["domains"]["environment"]["dataset_count"], 1)
+        self.assertEqual(radar["domains"]["vision"]["dataset_count"], 1)
+
+    def test_radar_status_endpoint_returns_fresh_json(self):
+        Dataset.objects.create(
+            name="Skin lesion images",
+            sample_count=5,
+            classes=["benign", "malignant"],
+        )
+
+        response = self.client.get(reverse("accounts:radar_status"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["domains"]["health"]["dataset_count"], 1)
+        self.assertEqual(response.json()["domains"]["health"]["sample_count"], 5)

@@ -2,7 +2,7 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
 {% block content %}
-<div class="overview-page">
+<div class="overview-page" data-radar-endpoint="{% url 'accounts:radar_status' %}">
 <section class="page-intro">
   <div><p class="eyebrow">{{ current_time|date:"l, F j, Y"|upper }}</p><h1>{{ greeting }}{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}.</h1><p class="subhead">Your research workspace at a glance.</p></div>
   <div class="overview-actions"><button class="button button-help" type="button" id="helpOpen" aria-haspopup="dialog" aria-controls="helpModal"><span>?</span> How it works</button><a class="button button-primary" href="{% url 'prediction:predict' %}"><span>＋</span> New prediction</a></div>
@@ -41,26 +41,26 @@
   <div class="panel dataset-radar-panel">
     <div class="panel-heading">
       <div><p class="eyebrow">LIVE DATASET RADAR</p><h3>Know what your workspace can see</h3></div>
-      <span class="live-badge"><i></i> Updating</span>
+      <span class="live-badge"><i></i> Live workspace</span>
     </div>
     <div class="radar-content">
       <div class="dataset-radar" aria-hidden="true">
         <div class="dataset-radar-ring ring-large"></div><div class="dataset-radar-ring ring-medium"></div><div class="dataset-radar-ring ring-small"></div>
         <div class="dataset-radar-axis axis-x"></div><div class="dataset-radar-axis axis-y"></div><div class="dataset-radar-sweep"></div>
-        <span class="dataset-node node-health"></span><span class="dataset-node node-vision"></span><span class="dataset-node node-nature"></span><span class="dataset-node node-core"></span>
+        <span class="dataset-node node-health" data-radar-node="health"></span><span class="dataset-node node-vision" data-radar-node="vision"></span><span class="dataset-node node-nature" data-radar-node="environment"></span><span class="dataset-node node-core"></span>
         <div class="dataset-radar-core"><span></span></div>
       </div>
       <div class="dataset-radar-copy">
-        <div class="radar-copy-top"><span>WORKSPACE COVERAGE</span><strong id="radarTimestamp">Synced just now</strong></div>
+        <div class="radar-copy-top"><span>WORKSPACE COVERAGE</span><strong id="radarTimestamp">{{ radar_data.synced_label }}</strong></div>
         <div class="dataset-filters" role="tablist" aria-label="Dataset domains">
-          <button class="dataset-filter is-active" type="button" data-domain="health" role="tab" aria-selected="true"><i class="domain-dot health-dot"></i>Health <b>01</b></button>
-          <button class="dataset-filter" type="button" data-domain="environment" role="tab" aria-selected="false"><i class="domain-dot nature-dot"></i>Environment <b>02</b></button>
-          <button class="dataset-filter" type="button" data-domain="vision" role="tab" aria-selected="false"><i class="domain-dot vision-dot"></i>General vision <b>03</b></button>
+          <button class="dataset-filter{% if radar_data.primary_domain == 'health' %} is-active{% endif %}" type="button" data-domain="health" role="tab" aria-selected="{% if radar_data.primary_domain == 'health' %}true{% else %}false{% endif %}"><i class="domain-dot health-dot"></i>Health <b>{{ radar_data.domains.health.dataset_count|stringformat:"02d" }}</b></button>
+          <button class="dataset-filter{% if radar_data.primary_domain == 'environment' %} is-active{% endif %}" type="button" data-domain="environment" role="tab" aria-selected="{% if radar_data.primary_domain == 'environment' %}true{% else %}false{% endif %}"><i class="domain-dot nature-dot"></i>Environment <b>{{ radar_data.domains.environment.dataset_count|stringformat:"02d" }}</b></button>
+          <button class="dataset-filter{% if radar_data.primary_domain == 'vision' %} is-active{% endif %}" type="button" data-domain="vision" role="tab" aria-selected="{% if radar_data.primary_domain == 'vision' %}true{% else %}false{% endif %}"><i class="domain-dot vision-dot"></i>General vision <b>{{ radar_data.domains.vision.dataset_count|stringformat:"02d" }}</b></button>
         </div>
-        <div class="radar-domain-detail" aria-live="polite"><span class="domain-kicker">PRIMARY DOMAIN</span><strong id="radarDomainName">Skin & health imaging</strong><p id="radarDomainDescription">Your workspace is optimized for labeled medical images and careful human review.</p><div class="radar-detail-meta"><span><b id="radarSampleCount">0</b> workspace datasets</span><span><b id="radarClassCount">7</b> typical classes</span></div></div>
+        <div class="radar-domain-detail" aria-live="polite"><span class="domain-kicker">PRIMARY DOMAIN</span><strong id="radarDomainName">{{ radar_data.primary.name }}</strong><p id="radarDomainDescription">{{ radar_data.primary.description }}</p><div class="radar-detail-meta"><span><b id="radarSampleCount">{{ radar_data.primary.dataset_count }}</b> workspace dataset{{ radar_data.primary.dataset_count|pluralize }}</span><span><b id="radarClassCount">{{ radar_data.primary.class_count }}</b> indexed class{{ radar_data.primary.class_count|pluralize }}</span></div></div>
       </div>
     </div>
-    <p class="radar-footnote"><span>ⓘ</span> Radar reflects compatible image-classification domains. Add a dataset to make workspace coverage live.</p>
+    <p class="radar-footnote"><span>ⓘ</span> <span id="radarFootnote">{{ radar_data.footnote }}</span></p>
   </div>
   <div class="panel help-panel" id="helpPanel">
     <div class="panel-heading"><div><p class="eyebrow">QUICK START GUIDE</p><h3>Three steps to a trustworthy result</h3></div><button class="help-reopen" type="button" id="helpReopen" aria-label="Open tutorial">↗</button></div>
@@ -87,6 +87,7 @@
 </section>
 <section class="panel safety-note"><span class="note-icon">✦</span><div><strong>Designed for careful research</strong><p>DermaAudit AI is a research and screening aid, not a diagnostic device. Every low-confidence result recommends expert review.</p></div><span class="note-arrow">↗</span></section>
 <div class="help-modal" id="helpModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle" tabindex="-1"><div class="help-modal-backdrop" data-help-close></div><div class="help-modal-card"><button class="help-modal-close" type="button" data-help-close aria-label="Close tutorial">×</button><span class="pill pill-mint">WORKSPACE GUIDE</span><h2 id="helpModalTitle">A clear path from data to evidence.</h2><p>DermaAudit helps research teams establish a dependable workflow before a model output is considered. Each stage adds context, checks risk, and keeps people in the loop.</p><div class="modal-list"><div><b>01</b><span><strong>Prepare the dataset</strong><small>Upload compatible labeled images and confirm the structure.</small></span></div><div><b>02</b><span><strong>Audit the evidence</strong><small>Review quality, duplication, imbalance, bias, and leakage signals.</small></span></div><div><b>03</b><span><strong>Evaluate with care</strong><small>Compare models, inspect explanations, and escalate uncertain results.</small></span></div></div><a class="button button-primary button-full" href="{% url 'datasets:upload' %}">Begin with a dataset <span>→</span></a></div></div>
+{{ radar_data|json_script:"radarData" }}
 </div>
 {% endblock %}
 {% block extra_js %}<script defer src="{% static 'js/home.js' %}"></script>{% endblock %}

@@ -17,6 +17,16 @@ IMAGE_MEAN = (0.485, 0.456, 0.406)
 IMAGE_STD = (0.229, 0.224, 0.225)
 
 
+def _report_progress(progress_callback, step, percent, label, detail):
+    if progress_callback:
+        progress_callback({
+            "step": step,
+            "percent": max(0, min(100, int(percent))),
+            "label": label,
+            "detail": detail,
+        })
+
+
 def _normalize_split(split):
     try:
         values = tuple(int(value) for value in split)
@@ -222,8 +232,9 @@ def _evaluate(torch, model, data_loader, labels, class_count):
     )
 
 
-def run_training(run):
+def run_training(run, progress_callback=None):
     """Train and evaluate one experiment, returning persisted metric values."""
+    progress_callback = progress_callback or getattr(run, "progress_callback", None)
     try:
         import torch
         from torch import nn
@@ -233,6 +244,13 @@ def run_training(run):
     torch.set_num_threads(1)
     torch.manual_seed(RANDOM_SEED)
 
+    _report_progress(
+        progress_callback,
+        "validate",
+        8,
+        "Validating your dataset",
+        "Checking image files, labels, and readable samples.",
+    )
     with run.dataset.uploaded_file.open("rb") as dataset_file:
         report = validate_upload(dataset_file)
     if not report["valid"]:
@@ -247,9 +265,23 @@ def run_training(run):
     train_records, validation_records, test_records = _split_records(report["records"], split)
     classes = sorted(report["classes"])
     label_to_index = {label: index for index, label in enumerate(classes)}
+    _report_progress(
+        progress_callback,
+        "load",
+        16,
+        "Loading image samples",
+        f"Reading {len(report['records']):,} validated images from the archive.",
+    )
     train_samples = _read_images(run.dataset, train_records)
     validation_samples = _read_images(run.dataset, validation_records)
     test_samples = _read_images(run.dataset, test_records)
+    _report_progress(
+        progress_callback,
+        "prepare",
+        27,
+        "Preparing model inputs",
+        f"Resizing images to {IMAGE_SIZE}×{IMAGE_SIZE} and applying normalization.",
+    )
     train_data = _tensor_dataset(torch, train_samples, label_to_index, augment=True)
     validation_data = _tensor_dataset(torch, validation_samples, label_to_index)
     test_data = _tensor_dataset(torch, test_samples, label_to_index)
@@ -279,8 +311,15 @@ def run_training(run):
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     epoch_losses = []
 
+    _report_progress(
+        progress_callback,
+        "train",
+        34,
+        "Training the model",
+        f"Running {epochs} epoch{'s' if epochs != 1 else ''} on the CPU.",
+    )
     model.train()
-    for _epoch in range(epochs):
+    for epoch in range(epochs):
         total_loss, batch_count = 0.0, 0
         for images, targets in train_loader:
             optimizer.zero_grad()
@@ -290,7 +329,21 @@ def run_training(run):
             total_loss += loss.item()
             batch_count += 1
         epoch_losses.append(round(total_loss / max(1, batch_count), 5))
+        _report_progress(
+            progress_callback,
+            "train",
+            34 + round(45 * (epoch + 1) / epochs),
+            "Training the model",
+            f"Epoch {epoch + 1} of {epochs} complete · loss {epoch_losses[-1]:.4f}.",
+        )
 
+    _report_progress(
+        progress_callback,
+        "evaluate",
+        86,
+        "Evaluating performance",
+        "Calculating held-out accuracy and macro-F1.",
+    )
     evaluation_loader = test_loader or validation_loader or train_loader
     evaluation_split = "test" if test_loader else "validation" if validation_loader else "training"
     accuracy, macro_f1 = _evaluate(torch, model, evaluation_loader, classes, len(classes))
@@ -298,6 +351,13 @@ def run_training(run):
     calibration_logits, calibration_targets = _collect_outputs(torch, model, calibration_loader)
     temperature = _fit_temperature(torch, calibration_logits, calibration_targets)
 
+    _report_progress(
+        progress_callback,
+        "checkpoint",
+        96,
+        "Saving the trained checkpoint",
+        "Packaging model weights and class metadata for prediction.",
+    )
     checkpoint_dir = Path(settings.MEDIA_ROOT) / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_path = checkpoint_dir / f"training_run_{run.pk}.pt"

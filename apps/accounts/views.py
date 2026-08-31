@@ -3,9 +3,11 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from apps.datasets.models import Dataset
+from apps.datasets.services.radar import build_radar_data
 from apps.prediction.models import Prediction
 from apps.training.models import TrainingRun
 from .models import Profile
@@ -21,16 +23,23 @@ def home(request):
         greeting = "Good evening"
     else:
         greeting = "Good night"
+    radar_data = build_radar_data(Dataset.objects.all())
     context = {
         "dataset_count": Dataset.objects.count(),
         "prediction_count": Prediction.objects.count(),
         "training_count": TrainingRun.objects.count(),
+        "radar_data": radar_data,
         "active_model": "No model registered",
         "page_title": "Overview",
         "greeting": greeting,
         "current_time": current_time,
     }
     return render(request, "home/home.html", context)
+
+
+def radar_status(request):
+    """Return fresh dataset coverage for the live overview radar."""
+    return JsonResponse(build_radar_data(Dataset.objects.all()))
 
 
 def login_view(request):
