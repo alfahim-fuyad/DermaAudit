@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="page-intro training-hero">
+  <div>
+    <p class="eyebrow">MODEL DEVELOPMENT</p>
+    <h1>Model training</h1>
+    <p class="subhead">Compare architectures with one consistent evaluation protocol.</p>
+  </div>
+  <div class="training-hero-actions">
+    <span class="pill pill-blue"><i></i> Reproducible protocol</span>
+    <a class="text-link" href="{% url 'training:experiments' %}">View experiment history <span>→</span></a>
+  </div>
+</section>
+
+<div class="training-layout">
+  <div class="panel training-form">
+    <div class="panel-heading training-heading">
+      <div>
+        <p class="eyebrow">NEW EXPERIMENT</p>
+        <h3>Configure a benchmark</h3>
+      </div>
+      <span class="step-badge">01 <small>/ CONFIGURE</small></span>
+    </div>
+    <div class="training-intro">
+      <span class="intro-mark">✦</span>
+      <p>Set a repeatable baseline before comparing model performance.</p>
+    </div>
+    <form method="post" action="{% url 'training:start' %}">
+      {% csrf_token %}
+      <label class="training-field">
+        <span>Dataset <small>Required</small></span>
+        <select name="dataset" required>
+          <option value="">Select an audited dataset</option>
+          {% for dataset in datasets %}
+            <option value="{{ dataset.pk }}">{{ dataset.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="training-field">
+        <span>Architecture <small>Model family</small></span>
+        <select name="architecture">
+          <option value="efficientnet_b0">EfficientNet-B0 · balanced</option>
+          <option value="resnet50">ResNet-50 · high capacity</option>
+          <option value="mobilenet_v3">MobileNetV3 · efficient</option>
+        </select>
+      </label>
+      <div class="training-options" aria-label="Training protocol">
+        <span><b>Split</b><strong>70 / 15 / 15</strong><small>Stratified</small></span>
+        <span><b>Epochs</b><strong>20</strong><small>Maximum</small></span>
+        <span><b>Device</b><strong>CPU preview</strong><small>Safe mode</small></span>
+      </div>
+      <button class="button button-primary button-full">Save benchmark configuration <span>→</span></button>
+    </form>
+    <p class="form-note"><span class="note-dot">i</span> Connect a trained Torch checkpoint in production to run full deep-learning training.</p>
+  </div>
+
+  <div class="panel architecture-panel">
+    <div class="panel-heading training-heading">
+      <div>
+        <p class="eyebrow">SUPPORTED ARCHITECTURES</p>
+        <h3>Choose the right trade-off</h3>
+      </div>
+      <span class="architecture-count">03</span>
+    </div>
+    <div class="architecture-list">
+      <div class="architecture-card selected" data-architecture="efficientnet_b0">
+        <span class="arch-icon">E</span>
+        <span class="architecture-copy"><strong>EfficientNet-B0</strong><small>Strong baseline for image classification</small><em>Balanced accuracy / compute</em></span>
+        <i aria-hidden="true">✓</i>
+      </div>
+      <div class="architecture-card" data-architecture="resnet50">
+        <span class="arch-icon purple">R</span>
+        <span class="architecture-copy"><strong>ResNet-50</strong><small>Deep residual features</small><em>Higher capacity for complex signals</em></span>
+        <i aria-hidden="true">＋</i>
+      </div>
+      <div class="architecture-card" data-architecture="mobilenet_v3">
+        <span class="arch-icon orange">M</span>
+        <span class="architecture-copy"><strong>MobileNetV3</strong><small>Lightweight deployment option</small><em>Fastest path to edge inference</em></span>
+        <i aria-hidden="true">＋</i>
+      </div>
+    </div>
+    <div class="architecture-footer">
+      <span class="status-dot"></span>
+      <p><strong>All options use the same split.</strong><small>Compare like with like across experiments.</small></p>
+    </div>
+  </div>
+</div>
+
+<div class="panel table-panel recent-runs">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">EXPERIMENT HISTORY</p>
+      <h3>Recent training runs</h3>
+    </div>
+    {% if runs %}<span class="run-count">{{ runs|length }} saved</span>{% endif %}
+  </div>
+  {% if runs %}
+    <div class="data-table">
+      <div class="table-row table-head"><span>Architecture</span><span>Dataset</span><span>Accuracy</span><span>Macro-F1</span><span>Status</span></div>
+      {% for run in runs %}
+        <div class="table-row">
+          <span><strong>{{ run.get_architecture_display }}</strong></span>
+          <span>{{ run.dataset.name|default:"Unassigned" }}</span>
+          <span>{% if run.status == "completed" %}{{ run.accuracy|floatformat:3 }}{% else %}<em class="pending-value">Pending</em>{% endif %}</span>
+          <span>{% if run.status == "completed" %}{{ run.macro_f1|floatformat:3 }}{% else %}<em class="pending-value">Pending</em>{% endif %}</span>
+          <span>{% if run.config.execution == "queued" %}<b class="status status-queued">Queued</b>{% else %}<b class="status status-{{ run.status }}">{{ run.get_status_display }}</b>{% endif %}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-inline training-empty">
+      <span class="empty-run-icon">◈</span>
+      <div><strong>No experiments yet</strong><p>Configure your first benchmark above to start a reproducible comparison.</p></div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

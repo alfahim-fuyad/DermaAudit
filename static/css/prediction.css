@@ -1,0 +1,12 @@
+/* Prediction upload and result affordances. */
+.prediction-dropzone{min-height:245px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;border:1px dashed #cbd8e5;border-radius:14px;background:#fbfdff;padding:24px}
+.prediction-dropzone .image-placeholder{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--blue-soft);color:var(--blue);font-size:27px}
+.prediction-dropzone.has-file{border-style:solid;border-color:#8dcdb1;background:#f3fcf7}
+.prediction-dropzone.has-file .image-placeholder{background:var(--mint);color:var(--green)}
+.result-image-wrap img{width:100%;height:100%;object-fit:cover}
+.result-summary h2{overflow-wrap:anywhere}
+.confidence-bar{overflow:hidden}
+.confidence-bar span{display:block;min-width:3px;transition:width .5s ease}
+.signal-list p{display:flex;align-items:flex-start;gap:8px}
+.signal-list p span{color:var(--green);font-weight:800}
+@media(max-width:720px){.prediction-dropzone{min-height:210px}.result-summary{order:-1}}

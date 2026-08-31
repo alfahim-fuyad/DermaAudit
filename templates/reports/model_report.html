@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-intro">
+  <div><p class="eyebrow">REPORTING / MODEL PERFORMANCE</p><h1>Model report</h1><p class="subhead">Compare evaluation signals without hiding uncertainty.</p></div>
+  <a class="button button-outline" href="{% url 'reports:dashboard' %}">← All reports</a>
+</section>
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">BENCHMARK RESULTS</p><h3>{{ run.get_architecture_display|default:"Model comparison" }}</h3></div><span class="pill pill-blue">{{ run.get_status_display|default:"Preview" }}</span></div>
+  <table class="report-table">
+    <thead><tr><th>Measure</th><th>Result</th><th>Interpretation</th></tr></thead>
+    <tbody>
+      <tr><td>Accuracy</td><td>{{ run.accuracy|floatformat:3|default:"—" }}</td><td>Overall correct predictions</td></tr>
+      <tr><td>Macro-F1</td><td>{{ run.macro_f1|floatformat:3|default:"—" }}</td><td>Balanced class performance</td></tr>
+      <tr><td>Evaluation device</td><td>{{ run.config.device|default:"CPU preview" }}</td><td>Reproducibility context</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

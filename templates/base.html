@@ -1,0 +1,81 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if page_title %}{{ page_title }} · {% endif %}DermaAudit AI</title>
+  <link rel="icon" href="{% static 'images/branding/dermaaudit-logo.png' %}" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dataset.css' %}">
+  <link rel="stylesheet" href="{% static 'css/prediction.css' %}">
+  <link rel="stylesheet" href="{% static 'css/reports.css' %}">
+  <link rel="stylesheet" href="{% static 'css/training.css' %}">
+  {% block extra_css %}{% endblock %}
+  <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+  <script defer src="{% static 'js/base.js' %}"></script>
+  <script defer src="{% static 'js/dashboard.js' %}"></script>
+  <script defer src="{% static 'js/dataset.js' %}"></script>
+  <script defer src="{% static 'js/prediction.js' %}"></script>
+  <script defer src="{% static 'js/reports.js' %}"></script>
+  <script defer src="{% static 'js/training.js' %}"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="DermaAudit AI home">
+        <img class="brand-logo" src="{% static 'images/branding/dermaaudit-logo.png' %}" alt="DermaAudit AI logo">
+        <span class="brand-copy"><strong><span class="brand-derma">Derma</span><span class="brand-audit">Audit</span></strong></span>
+      </a>
+      <div class="workspace-switcher">
+        <span class="workspace-icon">D</span>
+        <span><small>Workspace</small><strong>Clinical research</strong></span>
+        <span class="chevron">⌄</span>
+      </div>
+      <nav class="nav-group">
+        <p class="nav-label">Workspace</p>
+        <a class="nav-link {% if request.path == '/' or request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'home' %}active{% endif %}" href="/"><span class="nav-icon">⌂</span> Overview</a>
+        <a class="nav-link {% if request.resolver_match.app_name == 'datasets' %}active{% endif %}" href="{% url 'datasets:list' %}"><span class="nav-icon">▦</span> Datasets</a>
+        <a class="nav-link {% if request.resolver_match.app_name == 'training' %}active{% endif %}" href="{% url 'training:home' %}"><span class="nav-icon">◈</span> Model training</a>
+        <a class="nav-link {% if request.resolver_match.app_name == 'prediction' %}active{% endif %}" href="{% url 'prediction:predict' %}"><span class="nav-icon">⊙</span> New prediction</a>
+        <a class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}" href="{% url 'reports:dashboard' %}"><span class="nav-icon">▥</span> Reports</a>
+      </nav>
+      <nav class="nav-group nav-bottom">
+        <p class="nav-label">System</p>
+        <a class="nav-link" href="{% url 'accounts:profile' %}"><span class="nav-icon">◯</span> Profile</a>
+        <a class="nav-link" href="/admin/"><span class="nav-icon">⚙</span> Admin console</a>
+      </nav>
+      <div class="sidebar-foot">
+        <span class="status-dot"></span>
+        <span><strong>System operational</strong><small>Local workspace</small></span>
+      </div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuToggle" aria-label="Open menu">☰</button>
+        <div class="breadcrumbs"><span>DermaAudit AI</span><b>/</b><strong>{{ page_title|default:"Overview" }}</strong></div>
+        <div class="topbar-actions">
+          <button class="icon-button" aria-label="Notifications">♧<i></i></button>
+          {% if request.user.is_authenticated %}
+            <a class="avatar" href="{% url 'accounts:profile' %}">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</a>
+          {% else %}
+            <a class="button button-small button-outline" href="{% url 'accounts:login' %}">Sign in</a>
+          {% endif %}
+        </div>
+      </header>
+      {% if messages %}
+        <div class="toast-stack">
+          {% for message in messages %}<div class="toast toast-{{ message.tags }}">{{ message }}<button onclick="this.parentElement.remove()">×</button></div>{% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

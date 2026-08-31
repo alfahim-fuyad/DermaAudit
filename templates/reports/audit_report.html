@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-intro">
+  <div><p class="eyebrow">REPORTING / DATA QUALITY</p><h1>Audit report</h1><p class="subhead">A clear record of the checks applied to a dataset.</p></div>
+  <a class="button button-outline" href="{% url 'reports:dashboard' %}">← All reports</a>
+</section>
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">AUDIT SUMMARY</p><h3>{{ dataset.name|default:"Selected dataset" }}</h3></div><span class="pill pill-mint">{{ audit.quality_score|default:"Pending" }} quality score</span></div>
+  <div class="report-kpis">
+    <div class="metric-card"><small>QUALITY</small><strong>{{ audit.quality_score|default:"—" }}</strong><span>Composite signal</span></div>
+    <div class="metric-card"><small>DUPLICATES</small><strong>{{ audit.duplicate_rate|default:"—" }}%</strong><span>Perceptual match rate</span></div>
+    <div class="metric-card"><small>LEAKAGE</small><strong>{{ audit.leakage_risk|default:"—" }}</strong><span>Split recommendation</span></div>
+  </div>
+</div>
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">RECOMMENDATION</p><h3>Next best action</h3></div></div>
+  <p class="panel-copy">{{ audit.recommendation|default:"Run the dataset audit to generate a recommendation." }}</p>
+</div>
+{% endblock %}

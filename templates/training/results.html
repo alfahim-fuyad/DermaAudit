@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-intro">
+  <div><p class="eyebrow">MODEL DEVELOPMENT / RESULTS</p><h1>Training results</h1><p class="subhead">Review the benchmark configuration and performance signals.</p></div>
+  <a class="button button-outline" href="{% url 'training:experiments' %}">← Experiments</a>
+</section>
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">RUN DETAILS</p><h3>{{ run.get_architecture_display|default:"Benchmark result" }}</h3></div><span class="status status-{{ run.status|default:'ready' }}">{{ run.get_status_display|default:"Ready" }}</span></div>
+  <div class="report-kpis">
+    <div class="metric-card"><small>ACCURACY</small><strong>{{ run.accuracy|floatformat:3|default:"—" }}</strong><span>Held-out performance</span></div>
+    <div class="metric-card"><small>MACRO-F1</small><strong>{{ run.macro_f1|floatformat:3|default:"—" }}</strong><span>Class-balanced score</span></div>
+    <div class="metric-card"><small>EPOCHS</small><strong>{{ run.config.epochs|default:"—" }}</strong><span>Configured passes</span></div>
+  </div>
+</div>
+{% endblock %}

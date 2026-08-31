@@ -1,0 +1,139 @@
+(() => {
+  const cards = [...document.querySelectorAll(".architecture-card")];
+  const select = document.querySelector('select[name="architecture"]');
+  if (!cards.length || !select) return;
+
+  const enhanceSelect = (nativeSelect, id) => {
+    const control = document.createElement("div");
+    control.className = "select-control";
+    control.dataset.selectControl = "";
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "select-trigger";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.setAttribute("aria-controls", id);
+    const triggerValue = document.createElement("span");
+    triggerValue.className = "select-trigger-value";
+    trigger.append(triggerValue);
+
+    const menu = document.createElement("div");
+    menu.className = "select-menu";
+    menu.id = id;
+    menu.setAttribute("role", "listbox");
+    menu.hidden = true;
+    const optionButtons = [...nativeSelect.options].map((option, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "select-option";
+      button.dataset.value = option.value;
+      button.dataset.index = String(index);
+      button.setAttribute("role", "option");
+      button.innerHTML = `<span>${option.textContent}</span><b aria-hidden="true">✓</b>`;
+      button.addEventListener("click", () => {
+        nativeSelect.value = option.value;
+        nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        close();
+        trigger.focus();
+      });
+      menu.append(button);
+      return button;
+    });
+
+    const update = () => {
+      const selected = nativeSelect.options[nativeSelect.selectedIndex] || nativeSelect.options[0];
+      triggerValue.textContent = selected?.textContent || "";
+      trigger.classList.toggle("is-placeholder", !nativeSelect.value);
+      optionButtons.forEach((button) => {
+        const active = button.dataset.value === nativeSelect.value;
+        button.classList.toggle("is-selected", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+    };
+    const close = () => {
+      control.classList.remove("is-open");
+      trigger.setAttribute("aria-expanded", "false");
+      menu.hidden = true;
+    };
+    const open = () => {
+      menu.hidden = false;
+      control.classList.add("is-open");
+      trigger.setAttribute("aria-expanded", "true");
+    };
+    const toggle = () => (control.classList.contains("is-open") ? close() : open());
+
+    trigger.addEventListener("click", toggle);
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        close();
+        return;
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggle();
+        return;
+      }
+      if (!control.classList.contains("is-open")) return;
+      const current = Math.max(0, nativeSelect.selectedIndex);
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const next = Math.min(optionButtons.length - 1, Math.max(0, current + direction));
+        nativeSelect.selectedIndex = next;
+        nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (event.key === "Home" || event.key === "End") {
+        event.preventDefault();
+        nativeSelect.selectedIndex = event.key === "Home" ? 0 : optionButtons.length - 1;
+        nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+    nativeSelect.addEventListener("change", update);
+    nativeSelect.classList.add("premium-native-select");
+    nativeSelect.parentNode.insertBefore(control, nativeSelect);
+    control.append(trigger, menu, nativeSelect);
+    update();
+  };
+
+  enhanceSelect(document.querySelector('select[name="dataset"]'), "dataset-options");
+  enhanceSelect(select, "architecture-options");
+  document.addEventListener("click", (event) => {
+    document.querySelectorAll(".select-control.is-open").forEach((control) => {
+      if (!control.contains(event.target)) {
+        control.classList.remove("is-open");
+        const trigger = control.querySelector(".select-trigger");
+        const menu = control.querySelector(".select-menu");
+        trigger?.setAttribute("aria-expanded", "false");
+        if (menu) menu.hidden = true;
+      }
+    });
+  });
+
+  const choose = (value) => {
+    cards.forEach((card) => {
+      const active = card.dataset.architecture === value;
+      card.classList.toggle("is-selected", active);
+      card.classList.toggle("selected", active);
+      card.setAttribute("aria-pressed", String(active));
+    });
+  };
+  cards.forEach((card, index) => {
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    const value = card.dataset.architecture || ["efficientnet_b0", "resnet50", "mobilenet_v3"][index];
+    card.dataset.architecture = value;
+    card.addEventListener("click", () => {
+      select.value = value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select.value = value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  });
+  select.addEventListener("change", () => choose(select.value));
+  choose(select.value);
+})();

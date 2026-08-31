@@ -1,0 +1,14 @@
+/* Dataset library and upload interaction states. */
+.dataset-name{min-width:240px}
+.dataset-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dataset-icon{display:inline-grid;place-items:center;width:29px;height:29px;margin-right:9px;border-radius:8px;background:#edf4ff;color:var(--blue);font-style:normal;font-size:14px}
+.dropzone,.prediction-dropzone{position:relative}
+.dropzone input[type=file],.prediction-dropzone input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.dropzone strong,.prediction-dropzone strong{display:block}
+.dropzone small,.prediction-dropzone small{display:block;color:var(--muted)}
+.status{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.status:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-uploaded{color:#7b8793}.status-auditing{color:var(--orange)}.status-ready{color:var(--green)}.status-needs_review{color:#d07842}
+.upload-guidance code{color:var(--blue);font-size:.9em}
+.table-row:not(.table-head):hover{background:#fbfcfe}
+@media(max-width:720px){.dataset-name{min-width:190px}.dropzone,.prediction-dropzone{min-height:190px}}

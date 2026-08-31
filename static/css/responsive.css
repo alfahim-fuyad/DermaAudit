@@ -1,0 +1,162 @@
+/* Shared responsive rules are loaded last so every page uses the same layout system. */
+html,body{overflow-x:hidden}
+img{max-width:100%}
+.main-content{min-width:0;overflow-x:hidden}
+.page-intro>div{min-width:0}
+.page-intro h1{overflow-wrap:anywhere}
+.panel-heading>div{min-width:0}
+.panel-heading h3{overflow-wrap:anywhere}
+.training-form form label{display:block;min-width:0}
+.training-form form select{display:block;width:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Premium, accessible select controls. The native menu remains available for
+   keyboard and touch users while the closed control matches the design system. */
+.panel label select,
+.training-form form select{
+  appearance:none;
+  -webkit-appearance:none;
+  min-height:50px;
+  padding:0 46px 0 15px;
+  border:1px solid #dce6ef;
+  border-radius:12px;
+  background-color:#fbfdff;
+  background-image:
+    linear-gradient(45deg,transparent 50%,#2f78ee 50%),
+    linear-gradient(135deg,#2f78ee 50%,transparent 50%);
+  background-position:
+    calc(100% - 19px) 50%,
+    calc(100% - 14px) 50%;
+  background-repeat:no-repeat;
+  background-size:5px 5px,5px 5px;
+  box-shadow:0 2px 5px rgba(38,63,88,.04),inset 0 1px 0 rgba(255,255,255,.8);
+  color:var(--ink);
+  font-size:12px;
+  font-weight:600;
+  line-height:1.2;
+  transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease,transform .2s ease;
+}
+.panel label select:hover,
+.training-form form select:hover{
+  border-color:#a9c8f5;
+  background-color:#fff;
+  box-shadow:0 5px 14px rgba(47,120,238,.08),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.panel label select:focus,
+.training-form form select:focus{
+  border-color:#5b94f2;
+  background-color:#fff;
+  box-shadow:0 0 0 4px rgba(47,120,238,.13),0 5px 14px rgba(47,120,238,.08);
+  outline:0;
+}
+.panel label select:focus-visible,
+.training-form form select:focus-visible{
+  outline:2px solid rgba(47,120,238,.35);
+  outline-offset:2px;
+}
+.panel label select:required:invalid{
+  color:#8796a2;
+  font-weight:500;
+}
+.panel label select option{
+  padding:10px 12px;
+  background:#fff;
+  color:var(--ink);
+  font-weight:500;
+}
+.panel label select option:checked{
+  background:#edf4ff;
+  color:#216ce0;
+  font-weight:700;
+}
+
+/* Sidebar rhythm: keep the brand, workspace switcher, and nav on one
+   consistent alignment grid without changing the existing logo asset. */
+.sidebar{padding:22px 14px 18px}
+.brand{min-height:76px;height:76px;padding:0 8px;gap:10px;justify-content:flex-start}
+.brand-logo{width:64px;height:64px;flex:0 0 64px}
+.brand-copy{height:64px;font-size:18px;letter-spacing:-.65px}
+.workspace-switcher{margin:14px 3px 25px;min-height:54px;padding:10px 11px;gap:10px}
+.workspace-switcher small{font-size:9px;letter-spacing:.1px}
+.workspace-switcher strong{font-size:11px;line-height:1.25}
+.workspace-icon{width:30px;height:30px;flex:0 0 30px}
+.nav-group{padding:0 3px}
+.nav-label{margin:0 11px 9px}
+.nav-link{min-height:40px;padding:9px 11px;gap:11px;margin:2px 0}
+.nav-icon{width:18px;flex:0 0 18px;font-size:17px}
+.nav-bottom{padding-top:24px}
+.sidebar-foot{margin-top:20px;padding:16px 9px 0;gap:10px}
+
+@media (max-width:1050px){
+  .topbar{padding-left:clamp(20px,4vw,44px);padding-right:clamp(20px,4vw,44px)}
+  .page-intro{padding-left:clamp(24px,5.2%,44px);padding-right:clamp(24px,5.2%,44px)}
+}
+
+@media (min-width:721px) and (max-width:900px){
+  .overview-insights,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid{grid-template-columns:minmax(0,1fr)!important}
+  .auth-page{grid-template-columns:minmax(0,1fr)!important;max-width:620px;padding-left:28px;padding-right:28px}
+  .auth-aside{display:none}
+  .metric-grid,.report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panel{padding:22px}
+}
+
+@media (max-width:720px){
+  .sidebar{width:min(292px,88vw);left:0;transform:translateX(-105%);transition:transform .25s ease;box-shadow:var(--shadow)}
+  .sidebar.open{left:0;transform:translateX(0)}
+  .main-content{width:100%}
+  .topbar{height:64px;gap:10px;padding-left:16px;padding-right:16px}
+  .mobile-menu{display:block;flex:0 0 auto;padding:5px 3px}
+  .breadcrumbs{min-width:0;flex:1;gap:7px;font-size:11px;overflow:hidden;white-space:nowrap}
+  .breadcrumbs strong{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .topbar-actions{flex:0 0 auto;gap:8px}
+  .icon-button{font-size:20px;padding:5px}
+  .page-intro{gap:16px;padding:30px 18px 22px}
+  .page-intro h1{font-size:clamp(26px,8vw,32px);letter-spacing:-1.1px}
+  .subhead{font-size:13px}
+  .page-intro>.text-link{align-self:flex-start}
+  .stats-grid,.two-col-section,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid,.metric-grid,.report-kpis{grid-template-columns:minmax(0,1fr)!important;margin-left:18px;margin-right:18px}
+  .overview-insights{grid-template-columns:minmax(0,1fr)!important;margin-left:18px;margin-right:18px}
+  .panel{padding:20px}
+  .panel-heading{gap:10px}
+  .panel-heading h3{font-size:14px}
+  .table-panel{overflow-x:auto}
+  .table-panel .panel-heading{padding-left:18px;padding-right:18px}
+  .table-row{padding-left:18px;padding-right:18px}
+  .safety-note,.recommendation,.status-banner,.result-banner{margin-left:18px;margin-right:18px}
+  .safety-note{padding:14px 16px}
+  .hero-banner{margin-left:18px;margin-right:18px}
+  .overview-actions{width:100%;flex-wrap:wrap}
+  .overview-actions .button{min-width:0;flex:1;padding-left:12px;padding-right:12px}
+  .auth-page{display:block;width:100%;min-height:calc(100vh - 64px);padding:24px 18px}
+  .auth-card{padding:18px 4px}
+  .auth-brand{justify-content:center}
+  .auth-aside{display:none}
+  .detail-grid{grid-template-columns:minmax(0,1fr)}
+  .training-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .training-options span:last-child{grid-column:1/-1;border-right:0;margin-top:12px;padding-top:12px;border-top:1px solid #e1e7ea}
+  .result-image-wrap{height:min(72vw,300px)}
+}
+
+@media (max-width:400px){
+  .overview-actions{flex-direction:column}
+  .overview-actions .button{width:100%;flex:none}
+  .topbar-actions .icon-button{display:none}
+  .brand-copy{font-size:15px}
+  .auth-brand-copy{font-size:18px}
+}
+
+@media (max-width:720px){
+  .panel label select,
+  .training-form form select{
+    min-height:52px;
+    padding:0 48px 0 15px;
+    border-radius:13px;
+    font-size:16px;
+    letter-spacing:-.1px;
+  }
+  .panel label select:focus-visible,
+  .training-form form select:focus-visible{
+    outline-offset:1px;
+  }
+  .training-options{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .training-options span:last-child{grid-column:auto;margin-top:0;padding-top:10px;border-top:0}
+}

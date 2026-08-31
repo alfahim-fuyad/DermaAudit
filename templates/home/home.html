@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
+{% block content %}
+<div class="overview-page">
+<section class="page-intro">
+  <div><p class="eyebrow">{{ current_time|date:"l, F j, Y"|upper }}</p><h1>{{ greeting }}{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}.</h1><p class="subhead">Your research workspace at a glance.</p></div>
+  <div class="overview-actions"><button class="button button-help" type="button" id="helpOpen" aria-haspopup="dialog" aria-controls="helpModal"><span>?</span> How it works</button><a class="button button-primary" href="{% url 'prediction:predict' %}"><span>＋</span> New prediction</a></div>
+</section>
+<section class="hero-banner">
+  <div class="hero-copy"><span class="pill pill-mint">Research workspace</span><h2>Build trust into every<br><em>model decision.</em></h2><p>Audit your datasets, compare models, and review predictions with a clear chain of evidence.</p><a class="text-link" href="{% url 'datasets:upload' %}">Start with a dataset <span>→</span></a></div>
+  <div class="hero-graphic scan-visual" id="scanVisual">
+    <div class="scan-viewport">
+      <img class="scan-image" id="scanImage" src="{% static 'images/radar/scan-cancer.jpg' %}" alt="Skin cancer and skin tumor classification sample">
+      <div class="scan-image-wash"></div>
+      <div class="scan-beam"></div>
+      <span class="scan-corner scan-corner-top-left"></span><span class="scan-corner scan-corner-top-right"></span>
+      <span class="scan-corner scan-corner-bottom-left"></span><span class="scan-corner scan-corner-bottom-right"></span>
+      <span class="scan-target">＋</span>
+       <div class="scan-readout"><i class="scan-readout-dot" aria-hidden="true"></i><span>SCAN STATUS</span><strong>MONITORING</strong></div>
+      <div class="scan-frame-info"><span id="scanType">PRIMARY FOCUS</span><strong id="scanTitle">Skin cancer / tumor</strong><small id="scanIndex">01 / 06</small></div>
+    </div>
+    <div class="scan-tray" aria-hidden="true">
+      <span class="scan-tray-label">SUPPORTED IMAGE SETS</span>
+      <span class="scan-tray-item is-primary" data-scan-tray="0">Skin</span>
+      <span class="scan-tray-item" data-scan-tray="1">Plant</span>
+      <span class="scan-tray-item" data-scan-tray="2">Animal</span>
+      <span class="scan-tray-item" data-scan-tray="3">Food</span>
+      <span class="scan-tray-item" data-scan-tray="4">X-ray</span>
+      <span class="scan-tray-item" data-scan-tray="5">Other</span>
+    </div>
+  </div>
+</section>
+<section class="stats-grid">
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon blue">▦</span><span class="trend">Workspace</span></div><strong>{{ dataset_count }}</strong><span class="stat-label">Datasets tracked</span><div class="mini-bars"><i style="height:34%"></i><i style="height:56%"></i><i style="height:45%"></i><i style="height:72%"></i><i style="height:64%"></i><i style="height:82%"></i><i style="height:76%"></i></div></div>
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon violet">◈</span><span class="trend">Registry</span></div><strong>{{ training_count }}</strong><span class="stat-label">Training runs</span><div class="stat-progress"><span style="width:64%"></span></div><small>Benchmark history</small></div>
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon green">⊙</span><span class="trend">Privacy-first</span></div><strong>{{ prediction_count }}</strong><span class="stat-label">Predictions logged</span><div class="stat-progress green-progress"><span style="width:28%"></span></div><small>Minimal metadata only</small></div>
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon orange">✓</span><span class="trend">Status</span></div><strong class="stat-word">Ready</strong><span class="stat-label">Workspace health</span><div class="health-line"><span></span><span></span><span></span><span></span><span></span></div><small>All systems operational</small></div>
+</section>
+<section class="overview-insights">
+  <div class="panel dataset-radar-panel">
+    <div class="panel-heading">
+      <div><p class="eyebrow">LIVE DATASET RADAR</p><h3>Know what your workspace can see</h3></div>
+      <span class="live-badge"><i></i> Updating</span>
+    </div>
+    <div class="radar-content">
+      <div class="dataset-radar" aria-hidden="true">
+        <div class="dataset-radar-ring ring-large"></div><div class="dataset-radar-ring ring-medium"></div><div class="dataset-radar-ring ring-small"></div>
+        <div class="dataset-radar-axis axis-x"></div><div class="dataset-radar-axis axis-y"></div><div class="dataset-radar-sweep"></div>
+        <span class="dataset-node node-health"></span><span class="dataset-node node-vision"></span><span class="dataset-node node-nature"></span><span class="dataset-node node-core"></span>
+        <div class="dataset-radar-core"><span></span></div>
+      </div>
+      <div class="dataset-radar-copy">
+        <div class="radar-copy-top"><span>WORKSPACE COVERAGE</span><strong id="radarTimestamp">Synced just now</strong></div>
+        <div class="dataset-filters" role="tablist" aria-label="Dataset domains">
+          <button class="dataset-filter is-active" type="button" data-domain="health" role="tab" aria-selected="true"><i class="domain-dot health-dot"></i>Health <b>01</b></button>
+          <button class="dataset-filter" type="button" data-domain="environment" role="tab" aria-selected="false"><i class="domain-dot nature-dot"></i>Environment <b>02</b></button>
+          <button class="dataset-filter" type="button" data-domain="vision" role="tab" aria-selected="false"><i class="domain-dot vision-dot"></i>General vision <b>03</b></button>
+        </div>
+        <div class="radar-domain-detail" aria-live="polite"><span class="domain-kicker">PRIMARY DOMAIN</span><strong id="radarDomainName">Skin & health imaging</strong><p id="radarDomainDescription">Your workspace is optimized for labeled medical images and careful human review.</p><div class="radar-detail-meta"><span><b id="radarSampleCount">0</b> workspace datasets</span><span><b id="radarClassCount">7</b> typical classes</span></div></div>
+      </div>
+    </div>
+    <p class="radar-footnote"><span>ⓘ</span> Radar reflects compatible image-classification domains. Add a dataset to make workspace coverage live.</p>
+  </div>
+  <div class="panel help-panel" id="helpPanel">
+    <div class="panel-heading"><div><p class="eyebrow">QUICK START GUIDE</p><h3>Three steps to a trustworthy result</h3></div><button class="help-reopen" type="button" id="helpReopen" aria-label="Open tutorial">↗</button></div>
+    <div class="help-progress"><span id="helpProgressBar"></span></div>
+    <div class="help-step" data-step="1"><span class="help-number">01</span><div><strong>Bring in your data</strong><p>Upload a labeled image dataset, organized by class folders.</p></div></div>
+    <div class="help-step is-hidden" data-step="2"><span class="help-number">02</span><div><strong>Audit before training</strong><p>Check quality, duplicates, imbalance, bias, and leakage risk.</p></div></div>
+    <div class="help-step is-hidden" data-step="3"><span class="help-number">03</span><div><strong>Review every decision</strong><p>Compare models and keep a human in the loop for low-confidence results.</p></div></div>
+    <div class="help-footer"><span id="helpStepLabel">1 of 3</span><div><button class="button button-outline button-small" type="button" id="helpBack" disabled>Back</button><button class="button button-primary button-small" type="button" id="helpNext">Next step <span>→</span></button></div></div>
+  </div>
+</section>
+<section class="two-col-section">
+  <div class="panel"><div class="panel-heading"><div><p class="eyebrow">RESEARCH PIPELINE</p><h3>From data to decision</h3></div><a class="text-link small" href="{% url 'reports:dashboard' %}">View reports →</a></div>
+    <div class="pipeline">
+      <div class="pipeline-step done"><span>01</span><div><strong>Validate & profile</strong><small>Check formats, labels, metadata</small></div><b>✓</b></div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-step"><span>02</span><div><strong>Audit & prepare</strong><small>Find quality, bias, leakage risks</small></div><b>→</b></div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-step"><span>03</span><div><strong>Train & compare</strong><small>Evaluate with the same protocol</small></div><b>→</b></div>
+      <div class="pipeline-connector"></div>
+      <div class="pipeline-step"><span>04</span><div><strong>Explain & monitor</strong><small>Keep humans in the loop</small></div><b>→</b></div>
+    </div>
+  </div>
+  <div class="panel active-model-card"><div class="panel-heading"><div><p class="eyebrow">MODEL REGISTRY</p><h3>Active model</h3></div><span class="live-badge"><i></i> Live</span></div><div class="model-empty"><div class="model-emblem">◈</div><strong>No model registered yet</strong><p>Complete a training run to make your best model available for prediction.</p><a class="button button-outline" href="{% url 'training:home' %}">Explore training</a></div></div>
+</section>
+<section class="panel safety-note"><span class="note-icon">✦</span><div><strong>Designed for careful research</strong><p>DermaAudit AI is a research and screening aid, not a diagnostic device. Every low-confidence result recommends expert review.</p></div><span class="note-arrow">↗</span></section>
+<div class="help-modal" id="helpModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle" tabindex="-1"><div class="help-modal-backdrop" data-help-close></div><div class="help-modal-card"><button class="help-modal-close" type="button" data-help-close aria-label="Close tutorial">×</button><span class="pill pill-mint">WORKSPACE GUIDE</span><h2 id="helpModalTitle">A clear path from data to evidence.</h2><p>DermaAudit helps research teams establish a dependable workflow before a model output is considered. Each stage adds context, checks risk, and keeps people in the loop.</p><div class="modal-list"><div><b>01</b><span><strong>Prepare the dataset</strong><small>Upload compatible labeled images and confirm the structure.</small></span></div><div><b>02</b><span><strong>Audit the evidence</strong><small>Review quality, duplication, imbalance, bias, and leakage signals.</small></span></div><div><b>03</b><span><strong>Evaluate with care</strong><small>Compare models, inspect explanations, and escalate uncertain results.</small></span></div></div><a class="button button-primary button-full" href="{% url 'datasets:upload' %}">Begin with a dataset <span>→</span></a></div></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script defer src="{% static 'js/home.js' %}"></script>{% endblock %}
