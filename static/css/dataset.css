@@ -39,6 +39,27 @@
 .tutorial-card pre code{color:inherit}
 .tutorial-note{margin:12px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
 .tutorial-note code,.tutorial-steps code{padding:2px 4px;border-radius:4px;background:#edf4ff;color:var(--blue);font:inherit}
+.workflow-overview{margin-bottom:16px}
+.workflow-stage-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.workflow-stage-card{min-height:148px;padding:15px;border:1px solid #e3eaf0;border-radius:12px;background:#fbfcfe}
+.workflow-stage-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.workflow-stage-index{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:#edf4ff;color:var(--blue);font:600 10px "DM Mono",monospace}
+.workflow-stage-status{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#edf1f4;color:#8a98a3;font-weight:800}
+.workflow-stage-card h4{margin:0 0 7px;color:#21384c;font-size:12px;line-height:1.35}
+.workflow-stage-card p{min-height:32px;margin:0 0 10px;color:#667887;font-size:10px;line-height:1.45}
+.workflow-stage-card small{display:block;color:#8a99a5;font-size:9px;line-height:1.45}
+.workflow-stage-completed,.workflow-stage-passed{border-color:#bfe4cf;background:#f5fcf8}
+.workflow-stage-completed .workflow-stage-status,.workflow-stage-passed .workflow-stage-status{background:#dff5e8;color:#218d5b}
+.workflow-stage-needs_review,.workflow-stage-failed{border-color:#f0d0bb;background:#fffaf6}
+.workflow-stage-needs_review .workflow-stage-status,.workflow-stage-failed .workflow-stage-status{background:#fff0e3;color:#c17243}
+.workflow-configuration{margin:16px 0}
+.configuration-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.configuration-facts p{margin:0;padding:13px;border-radius:10px;background:#f7fafc}
+.configuration-facts span,.configuration-facts strong{display:block}
+.configuration-facts span{margin-bottom:6px;color:#8a99a5;font:500 9px "DM Mono",monospace;text-transform:uppercase}
+.configuration-facts strong{color:#2b4357;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+@media(max-width:900px){.workflow-stage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.configuration-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.workflow-stage-grid,.configuration-facts{grid-template-columns:1fr}.workflow-stage-card{min-height:0}.configuration-facts p{padding:12px}}
 .metadata-example{display:grid;gap:6px;margin-top:12px}
 .metadata-example strong{color:#647583;font:500 9px "DM Mono",monospace;text-transform:uppercase;letter-spacing:.4px}
 .metadata-example code{display:block;overflow:auto;padding:12px;border-radius:8px;background:#f8fafc;color:#425466;font:10px/1.55 "DM Mono",monospace;white-space:pre}

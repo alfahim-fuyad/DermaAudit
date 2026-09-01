@@ -40,6 +40,7 @@ def build_audit(validation, profile, leakage, bias, imbalance):
         "stages": {
             "validation": "passed" if validation["valid"] else "needs_review",
             "profiling": "completed" if readable else "blocked",
+            "configuration": "completed" if readable and validation.get("classes") else "blocked",
             "harmonization": "completed" if validation.get("classes") else "blocked",
             "audit": "completed" if readable else "blocked",
             "leakage": "completed" if readable else "blocked",

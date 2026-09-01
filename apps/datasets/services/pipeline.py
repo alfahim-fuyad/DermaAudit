@@ -10,6 +10,17 @@ from .profiler import build_profile
 from .validator import validate_upload
 
 
+DATASET_WORKFLOW_STAGES = (
+    ("stage_0", "Stage 0 · Validation", "Format, image, label, class, metadata, and structure checks"),
+    ("stage_1", "Stage 1 · Auto profiling", "Image, label, metadata, ID, group, and source profile"),
+    ("configuration", "Automatic configuration", "Canonical labels, split policy, and imbalance strategy"),
+    ("stage_2", "Stage 2 · Harmonization", "Standardized labels, metadata mapping, and source tags"),
+    ("stage_3", "Stage 3 · Data audit", "Duplicates, quality, labels, metadata, and class distribution"),
+    ("stage_4", "Stage 4 · Leakage control", "Group-aware or stratified split recommendation"),
+    ("stage_5", "Stage 5 · Bias & imbalance", "Subgroup availability and imbalance handling"),
+)
+
+
 def _public_validation(report):
     return {
         key: value for key, value in report.items()
@@ -22,7 +33,7 @@ def run_dataset_pipeline(dataset):
     dataset.status = "auditing"
     dataset.pipeline = {
         "status": "running",
-        "stages": ["validation", "profiling", "harmonization", "audit", "leakage", "bias", "imbalance"],
+        "stages": {key: "queued" for key, _label, _description in DATASET_WORKFLOW_STAGES},
     }
     dataset.save(update_fields=["status", "pipeline", "updated_at"])
     try:
@@ -34,6 +45,20 @@ def run_dataset_pipeline(dataset):
         bias = analyze_bias(profile)
         imbalance = analyze_imbalance(validation.get("class_counts", {}))
         audit = build_audit(validation, profile, leakage, bias, imbalance)
+        configuration = {
+            "task": "image_classification",
+            "label_column": validation.get("metadata", {}).get("label_column"),
+            "id_column": validation.get("metadata", {}).get("id_column"),
+            "group_column": validation.get("metadata", {}).get("group_column"),
+            "split_policy": leakage["split_strategy"],
+            "split_ratios": [70, 15, 15],
+            "label_mapping": harmonization["mapping"],
+            "source_tag": harmonization["source_tag"],
+            "imbalance_strategy": (
+                "weighted_loss_and_balanced_sampling"
+                if imbalance["severity"] != "Low" else "standard_sampling"
+            ),
+        }
         dataset.sample_count = validation["sample_count"]
         dataset.class_count = len(harmonization["classes"])
         dataset.classes = harmonization["classes"]
@@ -41,6 +66,7 @@ def run_dataset_pipeline(dataset):
             **profile,
             "validation": _public_validation(validation),
             "harmonization": harmonization,
+            "configuration": configuration,
         }
         dataset.validation = _public_validation(validation)
         dataset.audit = audit
@@ -48,6 +74,41 @@ def run_dataset_pipeline(dataset):
         dataset.pipeline = {
             "status": "completed" if validation["valid"] else "needs_review",
             "stages": audit["stages"],
+            "workflow": {
+                "stage_0": {
+                    "status": audit["stages"]["validation"],
+                    "summary": f"{validation['readable_count']:,} readable image(s), "
+                    f"{validation['invalid_count']:,} invalid",
+                },
+                "stage_1": {
+                    "status": audit["stages"]["profiling"],
+                    "summary": f"{profile['readable_images']:,} images profiled across "
+                    f"{len(validation.get('classes', []))} classes",
+                },
+                "configuration": {
+                    "status": audit["stages"]["configuration"],
+                    "summary": f"{configuration['split_policy']} split · "
+                    f"{configuration['imbalance_strategy'].replace('_', ' ')}",
+                },
+                "stage_2": {
+                    "status": audit["stages"]["harmonization"],
+                    "summary": f"{len(harmonization['classes'])} canonical classes",
+                },
+                "stage_3": {
+                    "status": audit["stages"]["audit"],
+                    "summary": f"Quality {audit['quality_score']}/100 · "
+                    f"{validation['duplicate_count']} duplicate(s)",
+                },
+                "stage_4": {
+                    "status": audit["stages"]["leakage"],
+                    "summary": f"{leakage['split_strategy']} split · risk {leakage['risk']}",
+                },
+                "stage_5": {
+                    "status": audit["stages"]["bias"],
+                    "summary": f"Bias {bias['status']} · imbalance {imbalance['severity']}",
+                },
+            },
+            "configuration": configuration,
         }
     except Exception as exc:
         dataset.status = "needs_review"
@@ -56,6 +117,10 @@ def run_dataset_pipeline(dataset):
             "errors": [f"Pipeline failed: {exc}"],
             "warnings": [],
         }
-        dataset.pipeline = {"status": "failed", "error": str(exc)}
+        dataset.pipeline = {
+            "status": "failed",
+            "error": str(exc),
+            "stages": {key: "failed" for key, _label, _description in DATASET_WORKFLOW_STAGES},
+        }
     dataset.save()
     return dataset

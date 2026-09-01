@@ -23,6 +23,12 @@
   .architecture-card span:nth-child(2){min-width:0}
   .architecture-card small{overflow-wrap:anywhere}
 }
+.training-workflow-overview{margin-bottom:18px}
+.training-workflow-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.training-workflow-grid .workflow-stage-card{min-height:155px}
+@media(max-width:1050px){.training-workflow-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.training-workflow-grid{grid-template-columns:1fr 1fr}.training-workflow-grid .workflow-stage-card{min-height:0}}
+@media(max-width:430px){.training-workflow-grid{grid-template-columns:1fr}}
 
 .training-hero{align-items:center;padding-bottom:25px}
 .training-hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

@@ -13,6 +13,16 @@ from .models import TrainingRun
 from .services.trainer import DEFAULT_SPLIT, EPOCHS, run_training
 
 
+TRAINING_WORKFLOW_STAGES = (
+    ("stage_6_experiments", "Stage 6 · Experiments", "Compare controlled benchmark variants"),
+    ("stage_7_modeling", "Stage 7 · Modeling", "Detect classes and configure the classification head"),
+    ("stage_8_evaluation", "Stage 8 · Evaluation", "Measure held-out and per-class performance"),
+    ("stage_9_reliability", "Stage 9 · Reliability", "Calibrate confidence and record reliability evidence"),
+    ("stage_10_xai", "Stage 10 · XAI", "Generate Grad-CAM at prediction time"),
+    ("stage_11_model_store", "Stage 11 · Model store", "Save versioned checkpoint and lineage"),
+)
+
+
 MAX_EPOCHS = 200
 _TRAINING_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="dermaaudit-training")
 
@@ -29,6 +39,7 @@ def _training_context(split_defaults=None, epochs_default=EPOCHS):
         "active_runs": TrainingRun.objects.filter(status="running").select_related("dataset"),
         "split_defaults": split_defaults,
         "epochs_default": epochs_default,
+        "training_workflow_stages": TRAINING_WORKFLOW_STAGES,
         "page_title": "Model training",
     }
 

@@ -3,7 +3,7 @@ from django.db import transaction
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Dataset
-from .services.pipeline import run_dataset_pipeline
+from .services.pipeline import DATASET_WORKFLOW_STAGES, run_dataset_pipeline
 from apps.reports.services.cleanup import clear_datasets, delete_dataset
 
 
@@ -99,5 +99,24 @@ def dataset_audit(request, pk):
         "progress": progress,
         "current_step": current_step,
         "progress_percent": progress_percent,
+        "workflow_stages": [
+            {
+                "key": key,
+                "label": label,
+                "description": description,
+                "status": (dataset.pipeline or {}).get("workflow", {}).get(key, {}).get(
+                    "status",
+                    "completed" if stages.get(
+                        {"stage_0": "validation", "stage_1": "profiling",
+                         "stage_2": "harmonization", "stage_3": "audit",
+                         "stage_4": "leakage", "stage_5": "bias"}.get(key, key)
+                    ) == "completed" else "pending",
+                ),
+                "summary": (dataset.pipeline or {}).get("workflow", {}).get(key, {}).get(
+                    "summary", "Run the audit to generate this evidence."
+                ),
+            }
+            for key, label, description in DATASET_WORKFLOW_STAGES
+        ],
         "page_title": "Dataset audit",
     })

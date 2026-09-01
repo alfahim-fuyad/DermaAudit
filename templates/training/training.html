@@ -16,6 +16,21 @@
   </div>
 </section>
 
+<section class="panel workflow-overview training-workflow-overview">
+  <div class="panel-heading">
+    <div><p class="eyebrow">STAGES 6–11</p><h3>Model evidence chain</h3></div>
+    <span class="pill pill-blue">Same split &amp; evaluation protocol</span>
+  </div>
+  <div class="workflow-stage-grid training-workflow-grid">
+    {% for key, label, description in training_workflow_stages %}
+      <article class="workflow-stage-card workflow-stage-pending">
+        <div class="workflow-stage-top"><span class="workflow-stage-index">{{ forloop.counter|add:"6"|stringformat:"02d" }}</span><span class="workflow-stage-status">·</span></div>
+        <h4>{{ label }}</h4><p>{{ description }}</p><small>Completes as the experiment progresses.</small>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
 {% if active_runs %}
   {% for run in active_runs %}
     <section class="panel training-progress-panel" data-training-progress data-status-url="{% url 'training:status' run.pk %}">

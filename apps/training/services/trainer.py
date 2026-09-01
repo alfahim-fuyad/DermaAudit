@@ -92,6 +92,29 @@ def _split_records(records, split=DEFAULT_SPLIT):
     return train, validation, test
 
 
+def _group_split_records(records, split=DEFAULT_SPLIT):
+    """Keep records from the same entity together when group IDs are available."""
+    split = _normalize_split(split)
+    grouped = {}
+    for record in records:
+        grouped.setdefault(record.get("group_id") or f"__record__{record['filename']}", []).append(record)
+
+    rng = random.Random(RANDOM_SEED)
+    groups = list(grouped.values())
+    rng.shuffle(groups)
+    targets = [sum(len(items) for items in groups) * ratio / 100 for ratio in split]
+    partitions = [[], [], []]
+    counts = [0, 0, 0]
+    for items in groups:
+        target_index = min(
+            range(3),
+            key=lambda index: (counts[index] - targets[index], index),
+        )
+        partitions[target_index].extend(items)
+        counts[target_index] += len(items)
+    return tuple(partitions)
+
+
 def _read_images(dataset, records):
     """Read only validated archive members into normalized CHW tensors later."""
     with dataset.uploaded_file.open("rb") as upload:
@@ -221,17 +244,92 @@ def _fit_temperature(torch, logits, targets):
 
 
 def _evaluate(torch, model, data_loader, labels, class_count):
-    from sklearn.metrics import accuracy_score, f1_score
+    from sklearn.metrics import (
+        accuracy_score,
+        balanced_accuracy_score,
+        confusion_matrix,
+        f1_score,
+        precision_score,
+        recall_score,
+        roc_auc_score,
+    )
 
     logits, actual_tensor = _collect_outputs(torch, model, data_loader)
     if logits is None:
-        return 0.0, 0.0
+        return {
+            "accuracy": 0.0,
+            "macro_f1": 0.0,
+            "balanced_accuracy": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "auroc": None,
+            "per_class": [],
+            "confusion_matrix": [],
+            "sample_count": 0,
+        }
     predictions = logits.argmax(dim=1).tolist()
     actual = actual_tensor.tolist()
-    return (
-        float(accuracy_score(actual, predictions)),
-        float(f1_score(actual, predictions, labels=list(range(class_count)), average="macro", zero_division=0)),
-    )
+    probabilities = torch.softmax(logits, dim=1).detach().cpu().numpy()
+    class_labels = list(range(class_count))
+    try:
+        auroc = float(roc_auc_score(actual, probabilities, multi_class="ovr", labels=class_labels))
+    except ValueError:
+        auroc = None
+    per_class = []
+    class_f1 = f1_score(actual, predictions, labels=class_labels, average=None, zero_division=0)
+    class_precision = precision_score(actual, predictions, labels=class_labels, average=None, zero_division=0)
+    class_recall = recall_score(actual, predictions, labels=class_labels, average=None, zero_division=0)
+    for index, label in enumerate(labels):
+        per_class.append({
+            "label": label,
+            "precision": round(float(class_precision[index]), 4),
+            "recall": round(float(class_recall[index]), 4),
+            "f1": round(float(class_f1[index]), 4),
+        })
+    return {
+        "accuracy": round(float(accuracy_score(actual, predictions)), 4),
+        "macro_f1": round(float(f1_score(actual, predictions, labels=class_labels, average="macro", zero_division=0)), 4),
+        "balanced_accuracy": round(float(balanced_accuracy_score(actual, predictions)), 4),
+        "precision": round(float(precision_score(actual, predictions, labels=class_labels, average="macro", zero_division=0)), 4),
+        "recall": round(float(recall_score(actual, predictions, labels=class_labels, average="macro", zero_division=0)), 4),
+        "auroc": round(auroc, 4) if auroc is not None else None,
+        "per_class": per_class,
+        "confusion_matrix": confusion_matrix(actual, predictions, labels=class_labels).tolist(),
+        "sample_count": len(actual),
+    }
+
+
+def _calibration_metrics(torch, logits, targets):
+    if logits is None or targets is None or len(targets) == 0:
+        return {"status": "insufficient_data", "ece": None, "brier": None, "bins": []}
+    probabilities = torch.softmax(logits, dim=1).detach().cpu()
+    confidences, predictions = probabilities.max(dim=1)
+    correct = predictions.eq(targets.cpu())
+    bins = []
+    ece = 0.0
+    for lower in [index / 10 for index in range(10)]:
+        upper = lower + 0.1
+        selected = (confidences > lower) & (confidences <= upper if upper < 1 else confidences <= upper)
+        if not selected.any():
+            continue
+        accuracy = float(correct[selected].float().mean())
+        confidence = float(confidences[selected].mean())
+        count = int(selected.sum())
+        ece += abs(accuracy - confidence) * count / len(targets)
+        bins.append({
+            "range": f"{lower:.1f}–{upper:.1f}",
+            "accuracy": round(accuracy, 4),
+            "confidence": round(confidence, 4),
+            "count": count,
+        })
+    one_hot = torch.nn.functional.one_hot(targets.cpu(), num_classes=probabilities.shape[1]).float()
+    brier = float(((probabilities - one_hot) ** 2).sum(dim=1).mean())
+    return {
+        "status": "completed",
+        "ece": round(ece, 4),
+        "brier": round(brier, 4),
+        "bins": bins,
+    }
 
 
 def run_training(run, progress_callback=None):
@@ -267,7 +365,8 @@ def run_training(run, progress_callback=None):
     if epochs < 1:
         raise ValueError("Epochs must be at least 1.")
 
-    train_records, validation_records, test_records = _split_records(report["records"], split)
+    split_function = _group_split_records if any(record.get("group_id") for record in report["records"]) else _split_records
+    train_records, validation_records, test_records = split_function(report["records"], split)
     classes = sorted(report["classes"])
     label_to_index = {label: index for index, label in enumerate(classes)}
     _report_progress(
@@ -351,10 +450,15 @@ def run_training(run, progress_callback=None):
     )
     evaluation_loader = test_loader or validation_loader or train_loader
     evaluation_split = "test" if test_loader else "validation" if validation_loader else "training"
-    accuracy, macro_f1 = _evaluate(torch, model, evaluation_loader, classes, len(classes))
+    evaluation = _evaluate(torch, model, evaluation_loader, classes, len(classes))
     calibration_loader = validation_loader or test_loader
     calibration_logits, calibration_targets = _collect_outputs(torch, model, calibration_loader)
     temperature = _fit_temperature(torch, calibration_logits, calibration_targets)
+    calibration = _calibration_metrics(
+        torch,
+        calibration_logits / temperature if calibration_logits is not None else None,
+        calibration_targets,
+    )
 
     _report_progress(
         progress_callback,
@@ -387,13 +491,15 @@ def run_training(run, progress_callback=None):
             "inference": {"horizontal_flip_tta": False},
             "temperature": temperature,
             "state_dict": model.state_dict(),
+            "evaluation": evaluation,
+            "calibration": calibration,
         },
         checkpoint_path,
     )
 
     return {
-        "accuracy": round(accuracy, 4),
-        "macro_f1": round(macro_f1, 4),
+        "accuracy": evaluation["accuracy"],
+        "macro_f1": evaluation["macro_f1"],
         "epochs": epochs,
         "split": " / ".join(str(value) for value in split),
         "split_ratios": list(split),
@@ -414,6 +520,16 @@ def run_training(run, progress_callback=None):
             "std": list(IMAGE_STD),
         },
         "temperature": temperature,
+        "evaluation": evaluation,
+        "calibration": calibration,
+        "workflow_stages": {
+            "stage_6_experiments": "completed",
+            "stage_7_modeling": "completed",
+            "stage_8_evaluation": "completed",
+            "stage_9_reliability": calibration["status"],
+            "stage_10_xai": "available_on_prediction",
+            "stage_11_model_store": "completed",
+        },
         "checkpoint": str(checkpoint_path.relative_to(settings.MEDIA_ROOT)),
         "final_loss": epoch_losses[-1],
         "loss_history": epoch_losses,

@@ -14,13 +14,16 @@ def predict(request):
             try:
                 analysis = analyze_image(upload)
                 upload.seek(0)
-                item = Prediction.objects.create(image=upload, predicted_class=analysis["label"],
-                                                 confidence=analysis["confidence"],
-                                                 review_required=analysis["review_required"],
-                                                 explanation=analysis)
+                item = Prediction.objects.create(
+                    image=upload,
+                    predicted_class=analysis["label"],
+                    confidence=analysis["confidence"],
+                    review_required=analysis["review_required"],
+                    explanation=analysis,
+                )
                 return redirect("prediction:result", pk=item.pk)
             except Exception as exc:
-                if isinstance(exc, (ValueError, OSError)):
+                if isinstance(exc, (ValueError, OSError, RuntimeError)):
                     messages.error(request, str(exc))
                 else:
                     messages.error(request, "That file could not be read as an image. Use JPG, PNG, or WEBP.")

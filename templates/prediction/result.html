@@ -1,3 +1,38 @@
 {% extends "base.html" %}
 {% load prediction_extras %}
-{% block content %}<section class="page-intro"><div><p class="eyebrow">CLASSIFICATION WORKSPACE / RESULT</p><h1>Prediction review</h1><p class="subhead">An interpretable result with the right level of caution.</p></div><a class="button button-outline" href="{% url 'prediction:predict' %}">＋ New image</a></section><div class="result-banner"><span class="warning-symbol">!</span><div><strong>Expert review recommended</strong><p>This model-assisted result should be reviewed before use.</p></div><span class="pill pill-orange">Human in the loop</span></div><div class="result-layout"><div class="panel result-image-panel"><div class="result-image-wrap">{% if prediction.image %}<img src="{{ prediction.image.url }}" alt="Uploaded classification image">{% else %}<div class="image-placeholder">◎</div>{% endif %}<div class="heat-overlay"></div><span class="heat-label">EXPLANATION PREVIEW</span></div><div class="image-caption"><span><b>Analysis ID</b> DA-{{ prediction.pk|stringformat:"04d" }}</span><span><b>Logged</b> {{ prediction.created_at|date:"M j, Y · H:i" }}</span></div></div><div class="panel result-summary"><p class="eyebrow">MODEL OUTPUT</p><h2>{{ prediction.predicted_class }}</h2>{% if prediction.explanation.mode == "trained_checkpoint" %}<p class="model-source">{{ prediction.explanation.model_architecture }} · {{ prediction.explanation.model_dataset }}</p>{% else %}<p class="model-source">Preview analysis · no completed checkpoint</p>{% endif %}<div class="confidence-row"><span>Confidence</span><strong>{{ prediction.confidence|percent|floatformat:0 }}%</strong></div><div class="confidence-bar"><span style="width:{{ prediction.confidence|percent }}%"></span></div>{% if prediction.explanation.ranked_predictions %}<div class="alternative-predictions"><p class="eyebrow">TOP ALTERNATIVES</p>{% for item in prediction.explanation.ranked_predictions %}<div class="alternative-row"><span>{{ item.label }}</span><strong>{{ item.percent|floatformat:0 }}%</strong></div>{% endfor %}</div>{% endif %}<div class="result-note"><span>ⓘ</span><p>{{ prediction.explanation.note }}</p></div><div class="signal-list">{% for signal in prediction.explanation.signals %}<p><span>✓</span>{{ signal }}</p>{% endfor %}</div><a class="button button-primary button-full" href="{% url 'prediction:predict' %}">Review another image <span>→</span></a></div></div>{% endblock %}
+
+{% block content %}
+<section class="page-intro">
+  <div><p class="eyebrow">CLASSIFICATION WORKSPACE / RESULT</p><h1>Prediction review</h1><p class="subhead">Model output, calibrated decision, and explanation artifact.</p></div>
+  <a class="button button-outline" href="{% url 'prediction:predict' %}">＋ New image</a>
+</section>
+
+<div class="result-banner {% if prediction.explanation.decision == 'accept' %}result-banner-accepted{% endif %}">
+  <span class="warning-symbol">{% if prediction.explanation.decision == "accept" %}✓{% else %}!{% endif %}</span>
+  <div><strong>{% if prediction.explanation.decision == "accept" %}Confidence threshold passed{% else %}Expert review required{% endif %}</strong><p>{{ prediction.explanation.confidence_policy.reason|default:"This model-assisted result should be reviewed before use." }}</p></div>
+  <span class="pill {% if prediction.explanation.decision == 'accept' %}pill-mint{% else %}pill-orange{% endif %}">{% if prediction.explanation.decision == "accept" %}Candidate result{% else %}Abstained / review{% endif %}</span>
+</div>
+
+<div class="result-layout">
+  <div class="panel result-image-panel">
+    <div class="result-image-wrap">
+      {% if prediction.explanation.xai_url %}<img src="{{ prediction.explanation.xai_url }}" alt="Grad-CAM explanation overlay for the prediction">
+      {% elif prediction.image %}<img src="{{ prediction.image.url }}" alt="Uploaded classification image">
+      {% else %}<div class="image-placeholder">◎</div>{% endif %}
+      <span class="heat-label">{% if prediction.explanation.xai_path %}GRAD-CAM EXPLANATION{% else %}EXPLANATION UNAVAILABLE{% endif %}</span>
+    </div>
+    <div class="image-caption"><span><b>Analysis ID</b> DA-{{ prediction.pk|stringformat:"04d" }}</span><span><b>Logged</b> {{ prediction.created_at|date:"M j, Y · H:i" }}</span></div>
+  </div>
+  <div class="panel result-summary">
+    <p class="eyebrow">MODEL OUTPUT</p><h2>{{ prediction.predicted_class }}</h2>
+    <p class="model-source">{{ prediction.explanation.model_architecture }} · {{ prediction.explanation.model_dataset }} · Run #{{ prediction.explanation.model_run_id }}</p>
+    <div class="confidence-row"><span>Calibrated confidence</span><strong>{{ prediction.confidence|percent|floatformat:0 }}%</strong></div>
+    <div class="confidence-bar"><span style="width:{{ prediction.confidence|percent }}%"></span></div>
+    {% if prediction.explanation.confidence_policy %}<div class="decision-facts"><p><span>Decision</span><strong>{{ prediction.explanation.decision|title }}</strong></p><p><span>Required threshold</span><strong>{{ prediction.explanation.confidence_policy.threshold|percent|floatformat:0 }}%</strong></p><p><span>Top-class margin</span><strong>{{ prediction.explanation.confidence_policy.margin|percent|floatformat:0 }}%</strong></p></div>{% endif %}
+    {% if prediction.explanation.ranked_predictions %}<div class="alternative-predictions"><p class="eyebrow">TOP ALTERNATIVES</p>{% for item in prediction.explanation.ranked_predictions %}<div class="alternative-row"><span>{{ item.label }}</span><strong>{{ item.percent|floatformat:0 }}%</strong></div>{% endfor %}</div>{% endif %}
+    <div class="result-note"><span>ⓘ</span><p>{{ prediction.explanation.note }}</p></div>
+    <div class="signal-list">{% for signal in prediction.explanation.signals %}<p><span>✓</span>{{ signal }}</p>{% endfor %}<p><span>✓</span>{% if prediction.explanation.xai_path %}Grad-CAM artifact generated{% else %}Grad-CAM was unavailable for this checkpoint{% endif %}</p></div>
+    <a class="button button-primary button-full" href="{% url 'prediction:predict' %}">Review another image <span>→</span></a>
+  </div>
+</div>
+{% endblock %}

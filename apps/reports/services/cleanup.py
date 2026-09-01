@@ -35,6 +35,14 @@ def _checkpoint_paths(runs):
     }
 
 
+def _xai_paths(predictions):
+    return {
+        _safe_media_path((prediction.explanation or {}).get("xai_path"))
+        for prediction in predictions
+        if (prediction.explanation or {}).get("xai_path")
+    }
+
+
 def delete_dataset(dataset):
     related_runs = list(TrainingRun.objects.filter(dataset=dataset))
     upload_path = _safe_media_path(dataset.uploaded_file.name) if dataset.uploaded_file else None
@@ -78,8 +86,12 @@ def clear_predictions():
         if prediction.image
     }
     prediction_count = len(predictions)
+    xai_paths = _xai_paths(predictions)
     Prediction.objects.all().delete()
-    return {"predictions": prediction_count, "files": _remove_files(image_paths)}
+    return {
+        "predictions": prediction_count,
+        "files": _remove_files(image_paths | xai_paths),
+    }
 
 
 def clear_workspace():

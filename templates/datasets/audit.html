@@ -1,2 +1,83 @@
 {% extends "base.html" %}
-{% block content %}<section class="page-intro"><div><p class="eyebrow">DATASET / AUDIT</p><h1>Audit workspace</h1><p class="subhead">{{ dataset.name }} · Quality and reliability checks.</p></div><a class="text-link" href="{{ dataset.get_absolute_url }}">← Dataset profile</a></section><div class="audit-progress {% if progress.ready %}is-complete{% endif %}" style="--audit-progress: {{ progress_percent }}%;" aria-label="Audit progress"><div class="audit-progress-line"><span></span></div><div class="audit-step {% if progress.profile %}completed{% elif current_step == 'profile' %}active{% endif %}"><b>{% if progress.profile %}✓{% else %}01{% endif %}</b><span>Profile</span></div><div class="audit-step {% if progress.quality %}completed{% elif current_step == 'quality' %}active{% endif %}"><b>{% if progress.quality %}✓{% else %}02{% endif %}</b><span>Quality</span></div><div class="audit-step {% if progress.leakage %}completed{% elif current_step == 'leakage' %}active{% endif %}"><b>{% if progress.leakage %}✓{% else %}03{% endif %}</b><span>Leakage</span></div><div class="audit-step {% if progress.ready %}completed{% elif current_step == 'ready' %}active{% endif %}"><b>{% if progress.ready %}✓{% else %}04{% endif %}</b><span>{% if progress.ready %}Ready{% else %}Ready{% endif %}</span></div></div><div class="audit-grid"><div class="panel audit-score"><p class="eyebrow">AUDIT SCORE</p><div class="score-ring"><strong>{{ audit.quality_score|default:"—" }}</strong><span>/100</span></div><h3>{% if audit.quality_score == 94 %}Strong foundation{% else %}Ready for analysis{% endif %}</h3><p>Composite score across image quality, labels, duplicates, and consistency.</p><form method="post">{% csrf_token %}<button class="button button-primary button-full">Run full audit <span>→</span></button></form></div><div class="panel"><div class="panel-heading"><div><p class="eyebrow">CHECK RESULTS</p><h3>Quality signals</h3></div><span class="status status-ready">{{ dataset.get_status_display }}</span></div><div class="check-list"><div><span class="check-icon">◉</span><p><strong>Duplicate detection</strong><small>Perceptual hash comparison</small></p><b>{{ audit.duplicate_rate }}%</b></div><div><span class="check-icon">◉</span><p><strong>Label consistency</strong><small>Class folder and metadata match</small></p><b>{{ audit.label_consistency }}%</b></div><div><span class="check-icon">◉</span><p><strong>Leakage risk</strong><small>Group-aware split recommendation</small></p><b>{{ audit.leakage_risk }}</b></div><div><span class="check-icon">◉</span><p><strong>Class balance</strong><small>Largest to smallest class</small></p><b>{{ audit.imbalance_ratio }}</b></div></div></div></div><div class="panel recommendation"><span class="note-icon">✦</span><div><p class="eyebrow">AUTOMATED RECOMMENDATION</p><h3>{{ audit.recommendation }}</h3><p>These checks guide the training configuration while keeping your original data untouched.</p></div></div>{% endblock %}
+
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">DATASET / AUDIT WORKFLOW</p>
+    <h1>Evidence pipeline</h1>
+    <p class="subhead">{{ dataset.name }} · Validation, harmonization, leakage control, and bias readiness.</p>
+  </div>
+  <a class="text-link" href="{{ dataset.get_absolute_url }}">← Dataset profile</a>
+</section>
+
+<section class="panel workflow-overview">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">STAGES 0–5</p>
+      <h3>Dataset evidence chain</h3>
+    </div>
+    <span class="pill {% if dataset.status == 'ready' %}pill-mint{% else %}pill-orange{% endif %}">{{ dataset.get_status_display }}</span>
+  </div>
+  <div class="workflow-stage-grid dataset-workflow-grid">
+    {% for stage in workflow_stages %}
+      <article class="workflow-stage-card workflow-stage-{{ stage.status }}">
+        <div class="workflow-stage-top">
+          <span class="workflow-stage-index">{{ forloop.counter|stringformat:"02d" }}</span>
+          <span class="workflow-stage-status">
+            {% if stage.status == "completed" or stage.status == "passed" %}✓{% elif stage.status == "needs_review" or stage.status == "failed" %}!{% else %}·{% endif %}
+          </span>
+        </div>
+        <h4>{{ stage.label }}</h4>
+        <p>{{ stage.description }}</p>
+        <small>{{ stage.summary }}</small>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="audit-grid">
+  <div class="panel audit-score">
+    <p class="eyebrow">AUDIT SCORE</p>
+    <div class="score-ring"><strong>{{ audit.quality_score|default:"—" }}</strong><span>/100</span></div>
+    <h3>{% if dataset.status == "ready" %}Ready for model development{% else %}Review before training{% endif %}</h3>
+    <p>Composite evidence across image quality, labels, duplicates, leakage, and class balance.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button class="button button-primary button-full">Run full audit <span>→</span></button>
+    </form>
+  </div>
+  <div class="panel">
+    <div class="panel-heading">
+      <div><p class="eyebrow">CHECK RESULTS</p><h3>Quality signals</h3></div>
+      <span class="status status-{{ dataset.status }}">{{ dataset.get_status_display }}</span>
+    </div>
+    <div class="check-list">
+      <div><span class="check-icon">◉</span><p><strong>Duplicate detection</strong><small>Exact image-content comparison</small></p><b>{{ audit.duplicate_rate }}%</b></div>
+      <div><span class="check-icon">◉</span><p><strong>Label consistency</strong><small>Class folder and metadata match</small></p><b>{{ audit.label_consistency }}%</b></div>
+      <div><span class="check-icon">◉</span><p><strong>Leakage risk</strong><small>{{ audit.leakage.split_strategy|default:"Split policy pending" }}</small></p><b>{{ audit.leakage_risk }}</b></div>
+      <div><span class="check-icon">◉</span><p><strong>Class balance</strong><small>Largest to smallest class</small></p><b>{{ audit.imbalance_ratio }}</b></div>
+    </div>
+  </div>
+</div>
+
+<section class="panel workflow-configuration">
+  <div class="panel-heading">
+    <div><p class="eyebrow">AUTOMATIC CONFIGURATION</p><h3>Training safeguards prepared from the dataset</h3></div>
+  </div>
+  <div class="configuration-facts">
+    <p><span>Task</span><strong>{{ dataset.profile.configuration.task|default:"Image classification" }}</strong></p>
+    <p><span>Split policy</span><strong>{{ dataset.pipeline.configuration.split_policy|default:"Pending audit" }}</strong></p>
+    <p><span>Group identifier</span><strong>{{ dataset.pipeline.configuration.group_column|default:"Not available" }}</strong></p>
+    <p><span>Imbalance handling</span><strong>{{ dataset.pipeline.configuration.imbalance_strategy|default:"Pending audit" }}</strong></p>
+  </div>
+</section>
+
+<div class="panel recommendation">
+  <span class="note-icon">✦</span>
+  <div>
+    <p class="eyebrow">AUTOMATED RECOMMENDATION</p>
+    <h3>{{ audit.recommendation }}</h3>
+    <p>These checks guide the training configuration while keeping the original upload untouched.</p>
+  </div>
+</div>
+{% endblock %}

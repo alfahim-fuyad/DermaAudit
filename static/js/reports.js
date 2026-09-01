@@ -52,6 +52,20 @@
       list.append(row);
     });
   };
+  const renderMonitoring = (monitoring) => {
+    if (!monitoring) return;
+    const values = {
+      "monitoring-volume": monitoring.prediction_volume,
+      "monitoring-abstention": `${monitoring.abstention_rate}%`,
+      "monitoring-confidence": monitoring.average_confidence === null ? "—" : `${monitoring.average_confidence}%`,
+      "monitoring-review": monitoring.review_queue,
+    };
+    Object.entries(values).forEach(([key, value]) => {
+      document.querySelectorAll(`[data-monitoring-value="${key}"]`).forEach((node) => {
+        node.textContent = value;
+      });
+    });
+  };
   const refresh = async () => {
     try {
       const response = await fetch(statusUrl, { headers: { "X-Requested-With": "XMLHttpRequest" }, cache: "no-store" });
@@ -64,6 +78,7 @@
       setValue("best_accuracy", state.best_accuracy === null ? "—" : `${state.best_accuracy}%`);
       setValue("best_model", state.best_model || "No completed model");
       renderRuns(state.active_runs || []);
+      renderMonitoring(state.monitoring);
       const connection = document.querySelector("[data-live-connection]");
       if (connection) connection.textContent = state.active_runs?.length ? `${state.active_runs.length} live job${state.active_runs.length === 1 ? "" : "s"}` : "Live workspace view";
       const updated = document.querySelector("[data-live-updated]");

@@ -2,6 +2,7 @@ from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.utils import timezone
+from collections import Counter
 from apps.datasets.models import Dataset
 from apps.prediction.models import Prediction
 from apps.training.models import TrainingRun
@@ -87,6 +88,15 @@ def live_status(request):
     ready_count = sum(1 for dataset in datasets if dataset.status == "ready")
     best_run = max(completed_runs, key=lambda run: run.accuracy, default=None)
     active_model = next((run for run in completed_runs if run.is_active), None)
+    abstained = sum(
+        1 for prediction in Prediction.objects.all()
+        if (prediction.explanation or {}).get("decision") == "abstain"
+    )
+    average_confidence = (
+        round(sum(float(prediction.confidence or 0) for prediction in predictions) / len(predictions) * 100, 1)
+        if predictions else None
+    )
+    class_distribution = Counter(prediction.predicted_class for prediction in predictions)
     return JsonResponse({
         "datasets": len(datasets),
         "runs": len(runs),
@@ -110,6 +120,23 @@ def live_status(request):
             }
             for run in active_runs
         ],
+        "monitoring": {
+            "status": "collecting" if predictions else "waiting_for_predictions",
+            "prediction_volume": predictions_count,
+            "abstained": abstained,
+            "abstention_rate": round(abstained / predictions_count * 100, 1) if predictions_count else 0,
+            "average_confidence": average_confidence,
+            "review_queue": sum(1 for prediction in predictions if prediction.review_required),
+            "class_distribution": dict(class_distribution),
+            "data_drift": {
+                "status": "not_available",
+                "detail": "A reference distribution is needed before drift can be measured.",
+            },
+            "fairness_drift": {
+                "status": "not_available",
+                "detail": "Approved subgroup metadata and verified labels are needed.",
+            },
+        },
         "updated_at": timezone.localtime().isoformat(),
     })
 

@@ -30,6 +30,23 @@
   </div>
 </section>
 
+<section class="panel monitoring-panel">
+  <div class="panel-heading">
+    <div><p class="eyebrow">STAGE 12 · MONITORING</p><h3>Prediction reliability loop</h3></div>
+    <span class="pill pill-blue">Live signals</span>
+  </div>
+  <div class="monitoring-facts">
+    <div><small>PREDICTIONS</small><strong data-monitoring-value="monitoring-volume">{{ predictions|length }}</strong><span>Logged outputs</span></div>
+    <div><small>ABSTENTION RATE</small><strong data-monitoring-value="monitoring-abstention">—</strong><span>Low-confidence decisions</span></div>
+    <div><small>AVG CONFIDENCE</small><strong data-monitoring-value="monitoring-confidence">—</strong><span>Calibrated output</span></div>
+    <div><small>REVIEW QUEUE</small><strong data-monitoring-value="monitoring-review">—</strong><span>Human verification needed</span></div>
+  </div>
+  <div class="monitoring-notice">
+    <p><span class="status-dot"></span><strong>Drift checks are guarded</strong></p>
+    <span>Data drift needs a reference distribution. Fairness drift needs approved subgroup metadata plus verified labels. Neither is reported until those inputs exist.</span>
+  </div>
+</section>
+
 <div class="two-col-section">
   <div class="panel">
     <div class="panel-heading">
