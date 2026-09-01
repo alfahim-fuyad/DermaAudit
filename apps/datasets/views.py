@@ -4,6 +4,7 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Dataset
 from .services.pipeline import run_dataset_pipeline
+from apps.reports.services.cleanup import clear_datasets, delete_dataset
 
 
 def dataset_list(request):
@@ -34,6 +35,17 @@ def dataset_upload(request):
     return render(request, "datasets/upload.html", {"page_title": "Upload dataset"})
 
 
+def dataset_clear(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    result = clear_datasets()
+    messages.success(
+        request,
+        f"Cleared {result['datasets']} dataset(s) and {result['runs']} related training record(s).",
+    )
+    return redirect("datasets:list")
+
+
 def dataset_detail(request, pk):
     dataset = get_object_or_404(Dataset, pk=pk)
     return render(request, "datasets/details.html", {"dataset": dataset, "page_title": dataset.name})
@@ -45,10 +57,7 @@ def dataset_delete(request, pk):
 
     dataset = get_object_or_404(Dataset, pk=pk)
     dataset_name = dataset.name
-    uploaded_file = dataset.uploaded_file
-    dataset.delete()
-    if uploaded_file:
-        uploaded_file.delete(save=False)
+    delete_dataset(dataset)
     messages.success(request, f"{dataset_name} was deleted from your workspace.")
     return redirect("datasets:list")
 

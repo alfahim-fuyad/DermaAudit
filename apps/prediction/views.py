@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Prediction
 from .services.predictor import _latest_checkpoint, analyze_image
+from apps.reports.services.cleanup import clear_predictions
 
 
 def predict(request):
@@ -34,3 +35,21 @@ def predict(request):
 def result(request, pk):
     item = get_object_or_404(Prediction, pk=pk)
     return render(request, "prediction/result.html", {"prediction": item, "page_title": "Prediction result"})
+
+
+def history(request):
+    predictions = Prediction.objects.all()
+    return render(
+        request,
+        "prediction/history.html",
+        {"predictions": predictions, "page_title": "Prediction history"},
+    )
+
+
+def clear_history(request):
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+    result = clear_predictions()
+    messages.success(request, f"Cleared {result['predictions']} prediction record(s) from history.")
+    return redirect("prediction:history")

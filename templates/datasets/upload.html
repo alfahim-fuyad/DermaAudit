@@ -1,2 +1,107 @@
 {% extends "base.html" %}
-{% block content %}<section class="page-intro"><div><p class="eyebrow">DATA MANAGEMENT / NEW</p><h1>Upload a dataset</h1><p class="subhead">Start with a compatible labeled image-classification dataset.</p></div><a class="text-link" href="{% url 'datasets:list' %}">← Back to datasets</a></section><div class="upload-layout"><div class="panel upload-panel"><form method="post" enctype="multipart/form-data" id="datasetForm">{% csrf_token %}<label>Dataset name<input type="text" name="name" placeholder="e.g. ISIC 2019 skin lesions"></label><label class="dropzone" id="dropzone"><input type="file" name="dataset_file" id="datasetFile" accept=".zip" required><span class="upload-cloud">↥</span><strong>Drop your dataset here</strong><small>or <u>browse files</u> · ZIP up to 2 GB</small><span class="file-name" id="fileName"></span></label><div class="upload-guidance"><span>ⓘ</span><div><strong>What can I upload?</strong><p>A ZIP containing folders of images organized by class. For example: <code>benign/</code> and <code>malignant/</code>.</p></div></div><button class="button button-primary button-full">Upload and profile <span>→</span></button></form></div><div class="upload-side"><div class="panel"><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What happens next?</h3><div class="mini-timeline"><p><b>01</b><span><strong>Validate</strong><small>Format, image, and label checks</small></span></p><p><b>02</b><span><strong>Profile</strong><small>Classes, sizes, channels, metadata</small></span></p><p><b>03</b><span><strong>Audit</strong><small>Quality, duplicates, leakage, bias</small></span></p></div></div><div class="scope-callout"><span>✦</span><p><strong>Compatible datasets only</strong><br>DermaAudit is designed for labeled image-classification tasks, not arbitrary files.</p></div></div></div>{% endblock %}{% block extra_js %}<script>const input=document.getElementById('datasetFile'); const zone=document.getElementById('dropzone'); const name=document.getElementById('fileName'); input?.addEventListener('change',()=>{name.textContent=input.files[0]?.name||''; zone.classList.toggle('has-file',!!input.files.length)}); ['dragenter','dragover'].forEach(e=>zone?.addEventListener(e,ev=>{ev.preventDefault();zone.classList.add('dragging')})); zone?.addEventListener('dragleave',()=>zone.classList.remove('dragging')); zone?.addEventListener('drop',ev=>{ev.preventDefault();input.files=ev.dataTransfer.files; input.dispatchEvent(new Event('change')); zone.classList.remove('dragging')});</script>{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div><p class="eyebrow">DATA MANAGEMENT / NEW</p><h1>Upload a dataset</h1><p class="subhead">Start with a compatible labeled image-classification dataset.</p></div>
+  <a class="text-link" href="{% url 'datasets:list' %}">← Back to datasets</a>
+</section>
+
+<div class="upload-layout">
+  <div class="panel upload-panel">
+    <form method="post" enctype="multipart/form-data" id="datasetForm">
+      {% csrf_token %}
+      <label>Dataset name<input type="text" name="name" placeholder="e.g. ISIC 2019 skin lesions"></label>
+      <label class="dropzone" id="dropzone">
+        <input type="file" name="dataset_file" id="datasetFile" accept=".zip" required>
+        <span class="upload-cloud">↥</span><strong>Drop your dataset ZIP here</strong>
+        <small>or <u>browse files</u> · ZIP up to 2 GB</small><span class="file-name" id="fileName"></span>
+      </label>
+      <div class="upload-guidance"><span>ⓘ</span><div><strong>What can I upload?</strong><p>Upload one ZIP with class folders, optional train/validation/test folders, or a CSV/JSON manifest with image labels. JPG, PNG, WEBP, BMP, GIF, JFIF, and TIFF are supported.</p></div></div>
+      <button class="button button-primary button-full">Upload and profile <span>→</span></button>
+    </form>
+  </div>
+  <div class="upload-side">
+    <div class="panel"><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What happens next?</h3><div class="mini-timeline"><p><b>01</b><span><strong>Validate</strong><small>Format, image, and label checks</small></span></p><p><b>02</b><span><strong>Profile</strong><small>Classes, sizes, channels, metadata</small></span></p><p><b>03</b><span><strong>Audit</strong><small>Quality, duplicates, leakage, bias</small></span></p></div></div>
+    <div class="scope-callout"><span>✦</span><p><strong>Compatible datasets only</strong><br>DermaAudit supports labeled image-classification tasks across domains, not arbitrary files.</p></div>
+  </div>
+</div>
+
+<section class="upload-tutorial" aria-labelledby="tutorial-title">
+  <div class="tutorial-heading"><div><p class="eyebrow">UPLOAD GUIDE / STEP BY STEP</p><h2 id="tutorial-title">Prepare your folder correctly</h2><p>Keep the original folder on your computer, then compress it as a single <strong>.zip</strong> file before uploading. Do not upload an uncompressed folder.</p></div><span class="tutorial-badge">Recommended format</span></div>
+  <div class="tutorial-grid">
+    <article class="panel tutorial-card tutorial-featured">
+      <div class="tutorial-card-top"><span class="tutorial-number">01</span><div><h3>Best option: classes inside train and test</h3><p>The class name should be the folder directly above each image.</p></div></div>
+      <pre aria-label="Recommended dataset folder structure"><code>my_dataset/
+├── train/
+│   ├── class_a/
+│   │   ├── image_001.jpg
+│   │   └── image_002.png
+│   └── class_b/
+│       ├── image_003.jpg
+│       └── image_004.png
+├── validation/
+│   ├── class_a/
+│   │   └── image_005.jpg
+│   └── class_b/
+│       └── image_006.jpg
+└── test/
+    ├── class_a/
+    │   └── image_007.jpg
+    └── class_b/
+        └── image_008.jpg</code></pre>
+      <p class="tutorial-note"><strong>Important:</strong> Replace <code>class_a</code> and <code>class_b</code> with your real labels, such as <code>healthy</code> and <code>pneumonia</code>. At least two classes are required.</p>
+    </article>
+
+    <article class="panel tutorial-card">
+      <div class="tutorial-card-top"><span class="tutorial-number">02</span><div><h3>Simple option: no split folders</h3><p>Use this when you want DermaAudit to inspect one labeled image collection.</p></div></div>
+      <pre aria-label="Simple dataset folder structure"><code>my_dataset/
+├── cats/
+│   ├── cat_001.jpg
+│   └── cat_002.webp
+├── dogs/
+│   ├── dog_001.jpg
+│   └── dog_002.png
+└── rabbits/
+    └── rabbit_001.tiff</code></pre>
+      <p class="tutorial-note">Every image must be inside a class folder. Files placed directly in <code>my_dataset/</code> do not have a reliable label.</p>
+    </article>
+
+    <article class="panel tutorial-card">
+      <div class="tutorial-card-top"><span class="tutorial-number">03</span><div><h3>Alternative: flat images + metadata</h3><p>Use CSV or JSON when labels are stored in a spreadsheet instead of folders.</p></div></div>
+      <pre aria-label="Metadata dataset folder structure"><code>my_dataset/
+├── images/
+│   ├── img_001.jpg
+│   └── img_002.png
+└── labels.csv</code></pre>
+      <div class="metadata-example"><strong>labels.csv</strong><code>filename,label,group_id
+images/img_001.jpg,cat,subject_01
+images/img_002.png,dog,subject_02</code></div>
+      <p class="tutorial-note">Use a filename/image/path column and a label/class/category/target column. <code>group_id</code> or <code>patient_id</code> helps detect data leakage.</p>
+    </article>
+
+    <article class="panel tutorial-card tutorial-checklist">
+      <div class="tutorial-card-top"><span class="tutorial-number">04</span><div><h3>Before you create the ZIP</h3><p>Quick checklist to avoid validation errors.</p></div></div>
+      <ul class="tutorial-list">
+        <li><span>✓</span><p><strong>Use real labels.</strong> Folder names or metadata values become prediction classes.</p></li>
+        <li><span>✓</span><p><strong>Keep images readable.</strong> Minimum image dimension is 32×32 pixels.</p></li>
+        <li><span>✓</span><p><strong>Use supported raster files.</strong> JPG, JPEG, JFIF, PNG, WEBP, BMP, GIF, TIF, or TIFF.</p></li>
+        <li><span>✓</span><p><strong>Remove unrelated files.</strong> A README is fine, but nested ZIPs and unsupported documents are skipped.</p></li>
+      </ul>
+    </article>
+  </div>
+
+  <div class="panel tutorial-steps">
+    <div><p class="eyebrow">FULL WORKFLOW</p><h3>From folder to prediction</h3></div>
+    <div class="workflow-steps">
+      <p><b>1</b><span><strong>Organize</strong><small>Put each image under its class folder, or prepare labels.csv/labels.json.</small></span></p>
+      <p><b>2</b><span><strong>Compress</strong><small>Right-click the top-level <code>my_dataset</code> folder and choose Compress/Send to ZIP.</small></span></p>
+      <p><b>3</b><span><strong>Upload and profile</strong><small>Enter a dataset name, choose the ZIP, then click Upload and profile.</small></span></p>
+      <p><b>4</b><span><strong>Review the audit</strong><small>Check classes, unreadable files, duplicates, image quality, and label balance.</small></span></p>
+      <p><b>5</b><span><strong>Train a model</strong><small>Open Model training, select the ready dataset, and start an experiment.</small></span></p>
+      <p><b>6</b><span><strong>Predict and compare</strong><small>Upload a new image from New prediction; review confidence, alternatives, and Reports.</small></span></p>
+    </div>
+  </div>
+
+  <div class="tutorial-warning"><span>ⓘ</span><p><strong>What does not work?</strong> A ZIP containing only loose images, a ZIP with just one class, a non-ZIP upload, corrupted images, or an image folder with no labels. The profile page will show the exact files and warnings to fix.</p></div>
+</section>
+{% endblock %}
+{% block extra_js %}<script>const input=document.getElementById('datasetFile'); const zone=document.getElementById('dropzone'); const name=document.getElementById('fileName'); input?.addEventListener('change',()=>{name.textContent=input.files[0]?.name||''; zone.classList.toggle('has-file',!!input.files.length)}); ['dragenter','dragover'].forEach(e=>zone?.addEventListener(e,ev=>{ev.preventDefault();zone.classList.add('dragging')})); zone?.addEventListener('dragleave',()=>zone.classList.remove('dragging')); zone?.addEventListener('drop',ev=>{ev.preventDefault();input.files=ev.dataTransfer.files; input.dispatchEvent(new Event('change')); zone.classList.remove('dragging')});</script>{% endblock %}

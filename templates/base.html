@@ -60,7 +60,21 @@
         <button class="mobile-menu" id="menuToggle" aria-label="Open menu">☰</button>
         <div class="breadcrumbs"><span>DermaAudit AI</span><b>/</b><strong>{{ page_title|default:"Overview" }}</strong></div>
         <div class="topbar-actions">
-          <button class="icon-button" aria-label="Notifications">♧<i></i></button>
+          <button class="icon-button notification-trigger" id="notificationToggle" type="button" aria-label="Open notifications" aria-controls="notificationPanel" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+            <i aria-hidden="true"></i>
+          </button>
+          <div class="notification-panel" id="notificationPanel" hidden>
+            <div class="notification-panel-heading">
+              <div><small>WORKSPACE SIGNALS</small><strong>Notifications</strong></div>
+              <span>0 new</span>
+            </div>
+            <div class="notification-empty">
+              <b>✓</b>
+              <div><strong>You're all caught up</strong><p>No new workspace alerts right now.</p></div>
+            </div>
+            <a class="notification-link" href="{% url 'datasets:list' %}">Review workspace <span>→</span></a>
+          </div>
           {% if request.user.is_authenticated %}
             <a class="avatar" href="{% url 'accounts:profile' %}">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</a>
           {% else %}

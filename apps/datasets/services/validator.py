@@ -6,10 +6,20 @@ from pathlib import PurePosixPath
 
 from PIL import Image
 
-from .metadata import attach_metadata, read_metadata
+from .metadata import attach_metadata, read_metadata, _record_keys
 
 
-IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+IMAGE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".jfif",
+    ".png",
+    ".webp",
+    ".bmp",
+    ".gif",
+    ".tif",
+    ".tiff",
+}
 MAX_FILES = 10000
 MAX_IMAGE_BYTES = 50 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
@@ -21,6 +31,22 @@ def _label_for_member(name):
     if len(path.parts) < 2:
         return ""
     return path.parts[-2].strip()
+
+
+def _metadata_labels(summary, rows):
+    """Index optional metadata labels for datasets with flat image archives."""
+    if not summary.get("available") or not summary.get("id_column") or not summary.get("label_column"):
+        return {}
+
+    labels = {}
+    for row in rows:
+        label = str(row.get(summary["label_column"]) or "").strip()
+        identifier = row.get(summary["id_column"])
+        if not label or identifier in (None, ""):
+            continue
+        for key in _record_keys(str(identifier)):
+            labels.setdefault(key, label)
+    return labels
 
 
 def validate_upload(upload):
@@ -50,7 +76,9 @@ def validate_upload(upload):
         report["errors"].append("The dataset exceeds the 2 GB upload limit.")
         return report
     if not upload.name.lower().endswith(".zip"):
-        report["errors"].append("Upload a ZIP containing one folder per class.")
+        report["errors"].append(
+            "Upload a ZIP containing labelled image folders or a metadata file with image labels."
+        )
         return report
 
     try:
@@ -68,6 +96,7 @@ def validate_upload(upload):
             report["metadata"] = metadata
             report["_metadata_rows"] = metadata_rows
             report["warnings"].extend(metadata.get("warnings", []))
+            metadata_labels = _metadata_labels(metadata, metadata_rows)
             seen_hashes = set()
             for info in members:
                 path = PurePosixPath(info.filename)
@@ -78,6 +107,11 @@ def validate_upload(upload):
                     continue
                 report["sample_count"] += 1
                 label = _label_for_member(info.filename)
+                if not label:
+                    label = next(
+                        (metadata_labels[key] for key in _record_keys(info.filename) if key in metadata_labels),
+                        "",
+                    )
                 if not label:
                     report["warnings"].append(
                         f"Image is not inside a class folder: {info.filename}"
@@ -148,9 +182,9 @@ def validate_upload(upload):
     )
     report["metadata"].pop("warnings", None)
     if not report["sample_count"]:
-        report["errors"].append("No supported JPG, PNG, or WEBP images were found.")
+        report["errors"].append("No supported raster images were found.")
     if report["readable_count"] and len(report["classes"]) < 2:
-        report["errors"].append("At least two labelled class folders are required.")
+        report["errors"].append("At least two labelled classes are required.")
     if report["sample_count"] != report["readable_count"]:
         report["warnings"].append("Some images could not be validated.")
     report["valid"] = bool(

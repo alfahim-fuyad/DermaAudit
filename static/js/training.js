@@ -136,4 +136,72 @@
   });
   select.addEventListener("change", () => choose(select.value));
   choose(select.value);
+
+  const form = document.getElementById("trainingForm");
+  const submit = document.getElementById("trainingSubmit");
+  const submitStatus = document.getElementById("trainingSubmitStatus");
+  form?.addEventListener("submit", () => {
+    if (submit?.disabled) return;
+    if (submit) {
+      submit.disabled = true;
+      submit.classList.add("is-loading");
+      submit.querySelector("span").textContent = "Starting…";
+    }
+    if (submitStatus) submitStatus.hidden = false;
+  });
+
+  const progressNodes = [
+    ...document.querySelectorAll('[data-training-run][data-run-status="running"]'),
+    ...document.querySelectorAll("[data-training-progress]"),
+  ];
+  const pollUrls = [...new Set(progressNodes.map((node) => node.dataset.statusUrl).filter(Boolean))];
+  if (pollUrls.length) {
+    let reloading = false;
+    const renderProgress = (panel, state) => {
+      const progress = state.progress || {};
+      const percent = Math.max(0, Math.min(100, Number(progress.percent) || 0));
+      const steps = ["validate", "load", "prepare", "train", "evaluate", "checkpoint"];
+      const currentIndex = steps.indexOf(progress.step);
+      panel.querySelector("[data-progress-fill]")?.style.setProperty("width", `${percent}%`);
+      const percentNode = panel.querySelector("[data-progress-percent]");
+      if (percentNode) percentNode.textContent = `${percent}%`;
+      const stageNode = panel.querySelector("[data-progress-stage]");
+      if (stageNode) stageNode.textContent = progress.label || "Training in progress";
+      const detailNode = panel.querySelector("[data-progress-detail]");
+      if (detailNode) detailNode.textContent = progress.detail || "Working through the next step.";
+      const countNode = panel.querySelector("[data-progress-step-count]");
+      if (countNode) countNode.textContent = currentIndex < 0 ? "Finishing up" : `Step ${currentIndex + 1} of ${steps.length}`;
+      panel.querySelectorAll("[data-progress-step]").forEach((stepNode, index) => {
+        stepNode.classList.toggle("is-complete", currentIndex >= 0 && index < currentIndex);
+        stepNode.classList.toggle("is-active", index === currentIndex || (currentIndex < 0 && index === 0));
+      });
+    };
+
+    const poll = async () => {
+      const states = await Promise.all(pollUrls.map(async (url) => {
+        try {
+          const response = await fetch(url, {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            cache: "no-store",
+          });
+          if (!response.ok) return "running";
+          const state = await response.json();
+          progressNodes.filter((node) => node.dataset.statusUrl === url).forEach((node) => {
+            if (node.matches("[data-training-progress]")) renderProgress(node, state);
+          });
+          if (state.status !== "running" && !reloading) {
+            reloading = true;
+            window.location.reload();
+          }
+          return state.status;
+        } catch (_error) {
+          return "running";
+        }
+      }));
+      if (states.some((state) => state === "running") && !reloading) {
+        window.setTimeout(poll, 2000);
+      }
+    };
+    window.setTimeout(poll, 1200);
+  }
 })();

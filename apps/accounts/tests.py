@@ -1,7 +1,12 @@
+import tempfile
+from pathlib import Path
+
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from apps.datasets.models import Dataset
+from apps.training.models import TrainingRun
 from .models import Profile
 
 
@@ -71,3 +76,91 @@ class AuthenticationFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "That email or password was not recognised.")
         self.assertNotIn("_auth_user_id", self.client.session)
+
+
+class OverviewRadarTests(TestCase):
+    def test_radar_uses_live_dataset_counts_and_labels(self):
+        Dataset.objects.create(
+            name="Dermatology screening set",
+            sample_count=24,
+            classes=["melanoma", "nevus", "benign"],
+        )
+        Dataset.objects.create(
+            name="Field crop health set",
+            sample_count=10,
+            classes=["healthy leaf", "rust"],
+        )
+        Dataset.objects.create(
+            name="Object benchmark",
+            sample_count=8,
+            classes=["cup", "book"],
+        )
+
+        response = self.client.get(reverse("accounts:home"))
+        radar = response.context["radar_data"]
+
+        self.assertEqual(radar["total_dataset_count"], 3)
+        self.assertEqual(radar["total_sample_count"], 42)
+        self.assertEqual(radar["total_class_count"], 7)
+        self.assertEqual(radar["primary_domain"], "health")
+        self.assertEqual(radar["domains"]["health"]["dataset_count"], 1)
+        self.assertEqual(radar["domains"]["health"]["class_count"], 3)
+        self.assertEqual(radar["domains"]["environment"]["dataset_count"], 1)
+        self.assertEqual(radar["domains"]["vision"]["dataset_count"], 1)
+
+    def test_radar_status_endpoint_returns_fresh_json(self):
+        Dataset.objects.create(
+            name="Skin lesion images",
+            sample_count=5,
+            classes=["benign", "malignant"],
+        )
+
+        response = self.client.get(reverse("accounts:radar_status"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["domains"]["health"]["dataset_count"], 1)
+        self.assertEqual(response.json()["domains"]["health"]["sample_count"], 5)
+
+    def test_model_registry_shows_live_completed_checkpoint_data(self):
+        dataset = Dataset.objects.create(name="Animals benchmark", status="ready")
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            checkpoint = Path(media_root) / "checkpoints" / "training_run_1.pt"
+            checkpoint.parent.mkdir()
+            checkpoint.write_bytes(b"checkpoint")
+            run = TrainingRun.objects.create(
+                dataset=dataset,
+                architecture="mobilenet_v3",
+                status="completed",
+                accuracy=0.875,
+                macro_f1=0.812,
+                config={
+                    "checkpoint": "checkpoints/training_run_1.pt",
+                    "classes": ["cat", "dog", "horse"],
+                    "epochs": 5,
+                    "preprocessing": {"image_size": 64},
+                },
+            )
+
+            response = self.client.get(reverse("accounts:home"))
+
+        self.assertEqual(response.context["active_model"], run)
+        self.assertEqual(response.context["model_registry"]["accuracy_percent"], 87.5)
+        self.assertEqual(response.context["model_registry"]["class_count"], 3)
+        self.assertContains(response, "MobileNetV3")
+        self.assertContains(response, "87.5%")
+        self.assertContains(response, "Animals benchmark")
+        self.assertContains(response, "Use for prediction")
+
+    def test_model_registry_stays_empty_without_a_valid_checkpoint(self):
+        TrainingRun.objects.create(
+            architecture="efficientnet_b0",
+            status="completed",
+            accuracy=0.99,
+            config={"checkpoint": "checkpoints/missing.pt"},
+        )
+
+        response = self.client.get(reverse("accounts:home"))
+
+        self.assertIsNone(response.context["active_model"])
+        self.assertIsNone(response.context["model_registry"])
+        self.assertContains(response, "No model registered yet")

@@ -4,7 +4,9 @@ from django.test import SimpleTestCase
 from PIL import Image
 
 from .services.trainer import (
+    EPOCHS,
     IMAGE_SIZE,
+    MAX_BATCH_SIZE,
     _build_model,
     _image_tensor,
     _split_records,
@@ -13,6 +15,11 @@ from .services.trainer import (
 
 
 class TrainingPipelineTests(SimpleTestCase):
+    def test_quick_training_defaults_are_bounded(self):
+        self.assertEqual(IMAGE_SIZE, 64)
+        self.assertEqual(EPOCHS, 5)
+        self.assertEqual(MAX_BATCH_SIZE, 32)
+
     def test_training_images_are_normalized_and_augmented(self):
         import torch
 

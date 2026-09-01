@@ -9,10 +9,45 @@
     <p class="subhead">Compare architectures with one consistent evaluation protocol.</p>
   </div>
   <div class="training-hero-actions">
-    <span class="pill pill-blue"><i></i> Reproducible protocol</span>
-    <a class="text-link" href="{% url 'training:experiments' %}">View experiment history <span>→</span></a>
+    <span class="training-protocol"><i></i><span>Reproducible protocol</span></span>
+    <a class="training-history-link" href="{% url 'training:experiments' %}">
+      <span>View experiment history</span><b aria-hidden="true">↗</b>
+    </a>
   </div>
 </section>
+
+{% if active_runs %}
+  {% for run in active_runs %}
+    <section class="panel training-progress-panel" data-training-progress data-status-url="{% url 'training:status' run.pk %}">
+      <div class="progress-panel-header">
+        <div>
+          <p class="eyebrow">LIVE EXPERIMENT</p>
+          <h3>Training is underway</h3>
+          <p class="progress-run-name">{{ run.get_architecture_display }} <span>·</span> {{ run.dataset.name|default:"Selected dataset" }}</p>
+        </div>
+        <div class="progress-live-badge"><i></i><span>LIVE</span></div>
+      </div>
+      <div class="progress-summary">
+        <div>
+          <strong data-progress-stage>Getting started</strong>
+          <p data-progress-detail>Preparing your training run.</p>
+        </div>
+        <b data-progress-percent>5%</b>
+      </div>
+      <div class="progress-track" aria-hidden="true"><span data-progress-fill style="width:5%"></span></div>
+      <div class="progress-meta"><span data-progress-step-count>Step 1 of 6</span><span>Updates automatically</span></div>
+      <ol class="training-steps" aria-label="Training progress">
+        <li data-progress-step="validate" class="is-active"><span>1</span><div><strong>Validate dataset</strong><small>Check image quality and labels</small></div></li>
+        <li data-progress-step="load"><span>2</span><div><strong>Load image samples</strong><small>Read validated images from ZIP</small></div></li>
+        <li data-progress-step="prepare"><span>3</span><div><strong>Prepare model inputs</strong><small>Resize and normalize images</small></div></li>
+        <li data-progress-step="train"><span>4</span><div><strong>Train the model</strong><small>Learn patterns across each epoch</small></div></li>
+        <li data-progress-step="evaluate"><span>5</span><div><strong>Evaluate performance</strong><small>Measure held-out results</small></div></li>
+        <li data-progress-step="checkpoint"><span>6</span><div><strong>Save checkpoint</strong><small>Make the model ready for prediction</small></div></li>
+      </ol>
+      <p class="progress-reassurance"><span>✦</span> You can keep working in this tab. We’ll refresh this run when it finishes.</p>
+    </section>
+  {% endfor %}
+{% endif %}
 
 <div class="training-layout">
   <div class="panel training-form">
@@ -27,7 +62,7 @@
       <span class="intro-mark">✦</span>
       <p>Set a repeatable baseline before comparing model performance.</p>
     </div>
-    <form method="post" action="{% url 'training:start' %}">
+    <form id="trainingForm" method="post" action="{% url 'training:start' %}">
       {% csrf_token %}
       <label class="training-field">
         <span>Dataset <small>Required</small></span>
@@ -68,10 +103,15 @@
           <small>1–200 training passes</small>
         </label>
       </div>
-      <p class="config-validation-note">Split percentages must total <strong>100%</strong>. Training runs on CPU with a deterministic pipeline.</p>
-      <button class="button button-primary button-full">Run training experiment <span>→</span></button>
+      <p class="config-validation-note">Split percentages must total <strong>100%</strong>. Quick baseline defaults use 64×64 inputs, batches up to 32, and 5 CPU epochs; increase epochs when you need a deeper comparison.</p>
+      <button id="trainingSubmit" type="submit" class="button button-primary button-full">
+        Run training experiment <span>→</span>
+      </button>
+      <p id="trainingSubmitStatus" class="training-submit-status" role="status" aria-live="polite" hidden>
+        Training is starting. This page will update when the run finishes.
+      </p>
     </form>
-    <p class="form-note"><span class="note-dot">i</span> Training runs on CPU with a deterministic image classifier and saves a checkpoint for this experiment.</p>
+    <p class="form-note"><span class="note-dot">i</span> Training runs on CPU with a fast deterministic image classifier and saves a checkpoint for this experiment. MobileNetV3 is the quickest architecture for a first run.</p>
   </div>
 
   <div class="panel architecture-panel">
@@ -118,7 +158,7 @@
     <div class="data-table">
       <div class="table-row table-head"><span>Architecture</span><span>Dataset</span><span>Accuracy</span><span>Macro-F1</span><span>Status</span></div>
       {% for run in runs %}
-        <div class="table-row">
+        <div class="table-row" data-training-run data-run-status="{{ run.status }}" data-status-url="{% url 'training:status' run.pk %}">
           <span><strong>{{ run.get_architecture_display }}</strong></span>
           <span>{{ run.dataset.name|default:"Unassigned" }}</span>
           <span>{% if run.status == "completed" %}{{ run.accuracy|floatformat:3 }}{% else %}<em class="pending-value">Pending</em>{% endif %}</span>

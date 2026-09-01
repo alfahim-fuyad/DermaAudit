@@ -1,10 +1,12 @@
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SESSION_SECRET", "dev-only-dermaaudit-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in {"1", "true", "yes"}
+TESTING = "test" in sys.argv
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [

@@ -20,5 +20,46 @@
 .button-danger{border:1px solid #f0caca;background:#fff7f7;color:#b34f4f}
 .button-danger:hover{border-color:#d99292;background:#fff0f0;color:#9e3e3e}
 .page-intro-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-chip{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 11px;border:1px solid #dce5eb;border-radius:10px;background:#fff;color:#657783;font:500 10px "DM Mono",monospace;letter-spacing:.15px;white-space:nowrap;box-shadow:0 3px 10px rgba(38,63,88,.04);transition:.2s}
+.filter-chip>i{display:grid;place-items:center;width:19px;height:19px;border-radius:6px;background:#edf4ff;color:var(--blue);font-style:normal;font-size:11px}
+.filter-chip>b{margin-left:2px;color:#91a0aa;font-size:13px;line-height:1;transform:translateY(-1px)}
+.filter-chip:hover{border-color:#a9c8f5;background:#fbfdff;color:var(--blue);box-shadow:0 5px 14px rgba(47,120,238,.08)}
+.upload-tutorial{margin:0 5.2% 38px}
+.tutorial-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin:4px 0 17px}
+.tutorial-heading h2{margin:4px 0 6px;font-size:24px;letter-spacing:-.7px}
+.tutorial-heading p:not(.eyebrow){max-width:720px;margin:0;color:var(--muted);font-size:12px;line-height:1.65}
+.tutorial-badge{padding:8px 11px;border:1px solid #ccebdd;border-radius:9px;background:#f1fbf5;color:#2b9765;font:500 9px "DM Mono",monospace;white-space:nowrap}
+.tutorial-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:15px}
+.tutorial-card{padding:23px 25px}
+.tutorial-card-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:15px}
+.tutorial-card-top h3{margin:2px 0 4px;font-size:14px;line-height:1.35}
+.tutorial-card-top p{margin:0;color:var(--muted);font-size:10px;line-height:1.5}
+.tutorial-number{display:grid;place-items:center;flex:0 0 29px;height:29px;border-radius:8px;background:#edf4ff;color:var(--blue);font:500 10px "DM Mono",monospace}
+.tutorial-card pre{overflow:auto;margin:0;padding:15px;border:1px solid #e7edf1;border-radius:9px;background:#f8fafc;color:#425466;font:10px/1.55 "DM Mono",monospace}
+.tutorial-card pre code{color:inherit}
+.tutorial-note{margin:12px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
+.tutorial-note code,.tutorial-steps code{padding:2px 4px;border-radius:4px;background:#edf4ff;color:var(--blue);font:inherit}
+.metadata-example{display:grid;gap:6px;margin-top:12px}
+.metadata-example strong{color:#647583;font:500 9px "DM Mono",monospace;text-transform:uppercase;letter-spacing:.4px}
+.metadata-example code{display:block;overflow:auto;padding:12px;border-radius:8px;background:#f8fafc;color:#425466;font:10px/1.55 "DM Mono",monospace;white-space:pre}
+.tutorial-list{display:grid;gap:13px;margin:2px 0 0;padding:0;list-style:none}
+.tutorial-list li{display:flex;align-items:flex-start;gap:9px}
+.tutorial-list li>span{display:grid;place-items:center;flex:0 0 19px;height:19px;border-radius:50%;background:#e7f8ef;color:#299568;font-size:10px;font-weight:800}
+.tutorial-list p{margin:0;color:var(--muted);font-size:10px;line-height:1.55}
+.tutorial-list strong{color:#354553}
+.tutorial-steps{display:grid;grid-template-columns:.6fr 2.4fr;gap:28px;margin-top:15px;padding:23px 25px}
+.tutorial-steps h3{margin:4px 0 0;font-size:14px}
+.workflow-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px 22px}
+.workflow-steps p{display:flex;align-items:flex-start;gap:9px;margin:0}
+.workflow-steps p>b{display:grid;place-items:center;flex:0 0 22px;height:22px;border-radius:7px;background:#fff1e3;color:#ca7834;font:500 10px "DM Mono",monospace}
+.workflow-steps strong,.workflow-steps small{display:block}
+.workflow-steps strong{margin:1px 0 4px;color:#354553;font-size:10px}
+.workflow-steps small{color:var(--muted);font-size:9px;line-height:1.5}
+.tutorial-warning{display:flex;align-items:flex-start;gap:10px;margin-top:15px;padding:14px 17px;border:1px solid #f3dfcf;border-radius:10px;background:#fffaf6;color:#b66e35}
+.tutorial-warning>span{font-size:13px}
+.tutorial-warning p{margin:0;font-size:10px;line-height:1.6}
+.tutorial-warning strong{color:#9e5c2b}
+@media(max-width:900px){.tutorial-grid{grid-template-columns:1fr}.tutorial-steps{grid-template-columns:1fr;gap:15px}.workflow-steps{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.upload-tutorial{margin-left:18px;margin-right:18px}.tutorial-heading{flex-direction:column;gap:10px}.tutorial-heading h2{font-size:21px}.tutorial-card,.tutorial-steps{padding:20px}.workflow-steps{grid-template-columns:1fr}.tutorial-badge{align-self:flex-start}}
 @media(max-width:720px){.dataset-name{min-width:190px}.dropzone,.prediction-dropzone{min-height:190px}}
 @media(max-width:720px){.page-intro-actions{width:100%}.page-intro-actions .button{flex:1}}

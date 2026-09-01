@@ -7,6 +7,10 @@
 .result-summary h2{overflow-wrap:anywhere}
 .confidence-bar{overflow:hidden}
 .confidence-bar span{display:block;min-width:3px;transition:width .5s ease}
+.alternative-predictions{margin:22px 0;padding-top:18px;border-top:1px solid #e5edf3}
+.alternative-predictions .eyebrow{margin-bottom:10px}
+.alternative-row{display:flex;justify-content:space-between;gap:16px;padding:8px 0;color:#526477;font-size:14px}
+.alternative-row strong{color:#17324d}
 .signal-list p{display:flex;align-items:flex-start;gap:8px}
 .signal-list p span{color:var(--green);font-weight:800}
 @media(max-width:720px){.prediction-dropzone{min-height:210px}.result-summary{order:-1}}

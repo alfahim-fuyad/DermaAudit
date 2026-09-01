@@ -67,13 +67,28 @@ class DatasetValidatorTests(SimpleTestCase):
         ]))
 
         self.assertFalse(report["valid"])
-        self.assertIn("At least two labelled class folders are required.", report["errors"])
+        self.assertIn("At least two labelled classes are required.", report["errors"])
+
+    def test_flat_images_with_metadata_labels_are_accepted(self):
+        report = validate_upload(_zip_file([
+            ("one.bmp", _image_bytes()),
+            ("two.tiff", _image_bytes("black")),
+            (
+                "labels.csv",
+                b"filename,category\none.bmp,cats\ntwo.tiff,dogs\n",
+            ),
+        ]))
+
+        self.assertTrue(report["valid"])
+        self.assertEqual(report["classes"], ["cats", "dogs"])
+        self.assertEqual(report["class_counts"], {"cats": 1, "dogs": 1})
+        self.assertEqual(report["metadata"]["matched_images"], 2)
 
     def test_non_zip_upload_is_rejected(self):
         report = validate_upload(SimpleUploadedFile("dataset.tar", b"archive"))
 
         self.assertFalse(report["valid"])
-        self.assertIn("Upload a ZIP containing one folder per class.", report["errors"])
+        self.assertIn("labelled image folders", report["errors"][0])
 
     def test_path_traversal_is_rejected(self):
         report = validate_upload(_zip_file([
