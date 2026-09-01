@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load prediction_extras %}
+{% block content %}
+<section class="page-intro">
+  <div><p class="eyebrow">CLASSIFICATION WORKSPACE / HISTORY</p><h1>Prediction history</h1><p class="subhead">Review previously logged model-assisted classifications.</p></div>
+  <div class="page-actions"><a class="button button-primary" href="{% url 'prediction:predict' %}">＋ New prediction</a>{% if predictions %}<form method="post" action="{% url 'prediction:clear_history' %}" onsubmit="return confirm('Clear all prediction history? Logged images and classification results will be permanently deleted.');">{% csrf_token %}<button class="button button-danger" type="submit">Clear history</button></form>{% endif %}</div>
+</section>
+<div class="panel table-panel">
+  {% if predictions %}
+  <div class="data-table prediction-history-table">
+    <div class="table-row table-head"><span>Result</span><span>Confidence</span><span>Mode</span><span>Review</span><span>Logged</span></div>
+    {% for prediction in predictions %}
+    <div class="table-row"><span><i class="dataset-icon">⊙</i><strong>{{ prediction.predicted_class }}</strong></span><span>{{ prediction.confidence|percent|floatformat:1 }}%</span><span>{% if prediction.explanation.mode == "trained_checkpoint" %}Trained model{% else %}Preview{% endif %}</span><span><b class="status status-needs_review">Review required</b></span><span>{{ prediction.created_at|date:"M j, Y" }}</span></div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-icon">⊙</div><h3>No prediction history</h3><p>Uploaded image classifications will appear here after review.</p><a class="button button-primary" href="{% url 'prediction:predict' %}">Analyze an image</a></div>
+  {% endif %}
+</div>
+{% endblock %}

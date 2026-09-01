@@ -17,27 +17,6 @@
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:720px){.empty-state{padding:42px 18px}.panel-heading{align-items:flex-start}}
 
-/* Functional topbar notification control. */
-.topbar-actions{position:relative}
-.icon-button{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;padding:0;transition:background-color .2s ease,color .2s ease}
-.icon-button:hover{background:#f3f7fb;color:var(--blue)}
-.icon-button:focus-visible{outline:3px solid rgba(47,120,238,.25);outline-offset:2px}
-.icon-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.7}
-.icon-button i{right:5px;top:5px;width:6px;height:6px;border:2px solid #fff}
-.notification-panel{position:absolute;z-index:8;top:45px;right:0;width:min(300px,calc(100vw - 36px));padding:15px;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 18px 38px rgba(38,63,88,.14);animation:notification-pop-in .18s ease both}
-.notification-panel[hidden]{display:none}
-.notification-panel-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;padding-bottom:12px;border-bottom:1px solid #edf1f3}
-.notification-panel-heading small{display:block;color:#9ba7af;font:9px "DM Mono",monospace;letter-spacing:.7px}
-.notification-panel-heading strong{display:block;margin-top:4px;font-size:13px}
-.notification-panel-heading>span{padding:5px 7px;border-radius:999px;background:#f2f5f7;color:#8b98a1;font:9px "DM Mono",monospace;white-space:nowrap}
-.notification-empty{display:flex;align-items:flex-start;gap:10px;padding:16px 1px 14px}
-.notification-empty>b{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#e4f8ed;color:#2ba36f;font-size:13px}
-.notification-empty strong{display:block;font-size:11px}
-.notification-empty p{margin:3px 0 0;color:var(--muted);font-size:10px;line-height:1.45}
-.notification-link{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #edf1f3;padding:11px 1px 0;color:var(--blue);font-size:10px;font-weight:800}
-.notification-link span{font-size:15px;line-height:1}
-@keyframes notification-pop-in{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
-
 /* Keep the full mark visible and give the external wordmark a stable alignment. */
 .brand{width:100%;min-height:72px;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;padding:0 10px;border-radius:12px;text-align:left;transition:background-color .2s ease}
 .brand:hover{background:#f7fbff}

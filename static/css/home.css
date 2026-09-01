@@ -61,9 +61,7 @@
 @media(max-width:720px){.overview-page .overview-actions{width:100%}.overview-page .overview-actions .button{flex:1}.overview-page .overview-insights{grid-template-columns:1fr;margin-left:18px;margin-right:18px}.overview-page .radar-content{grid-template-columns:1fr}.overview-page .dataset-radar{margin:0 auto}.overview-page .radar-copy-top{margin-top:2px}.overview-page .help-panel{min-height:260px}}
 @media(prefers-reduced-motion:reduce){.overview-page *,.overview-page *:before,.overview-page *:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
- .overview-page .dataset-node.is-empty{opacity:.16;box-shadow:none;animation:none}
-
- /* Scan visual polish */
+/* Scan visual polish */
 .overview-page .hero-graphic{width:51%;background:linear-gradient(135deg,#d4f5e4 0%,#b4e7d0 52%,#a4dcc5 100%);box-shadow:inset 18px 0 38px rgba(255,255,255,.12)}
 .overview-page .scan-viewport{inset:18px 18px 47px;border-color:rgba(255,255,255,.78);border-radius:16px;background:#8fcbb0;box-shadow:0 16px 32px rgba(30,102,72,.17),inset 0 0 0 1px rgba(255,255,255,.2)}
 .overview-page .scan-viewport:before{content:"";position:absolute;z-index:2;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(13,64,49,.18),transparent 18% 82%,rgba(13,64,49,.14)),linear-gradient(0deg,rgba(10,54,40,.18),transparent 24% 76%,rgba(255,255,255,.1)),repeating-linear-gradient(0deg,rgba(255,255,255,.045) 0 1px,transparent 1px 4px);mix-blend-mode:soft-light}
