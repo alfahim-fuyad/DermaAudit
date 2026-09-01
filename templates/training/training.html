@@ -3,7 +3,7 @@
 
 {% block content %}
 <section class="page-intro training-hero">
-  <div>
+  <div class="training-hero-copy">
     <p class="eyebrow">MODEL DEVELOPMENT</p>
     <h1>Model training</h1>
     <p class="subhead">Compare architectures with one consistent evaluation protocol.</p>
@@ -16,6 +16,19 @@
   </div>
 </section>
 
+<div class="training-hero-visual" role="img" aria-label="Animated model development path from experiments to model store">
+  <div class="training-hero-visual-top"><span>DEVELOPMENT PATH</span><b>STAGE 06 → 11</b></div>
+  <div class="training-path">
+    <span class="training-path-line" aria-hidden="true"><i></i></span>
+    <span class="training-path-step"><b>06</b><small>Experiments</small></span>
+    <span class="training-path-step"><b>07</b><small>Modeling</small></span>
+    <span class="training-path-step"><b>08</b><small>Evaluation</small></span>
+    <span class="training-path-step"><b>09</b><small>Reliability</small></span>
+    <span class="training-path-step"><b>10</b><small>XAI</small></span>
+    <span class="training-path-step"><b>11</b><small>Model store</small></span>
+  </div>
+</div>
+
 <section class="panel workflow-overview training-workflow-overview">
   <div class="panel-heading">
     <div><p class="eyebrow">STAGES 6–11</p><h3>Model evidence chain</h3></div>
@@ -24,7 +37,7 @@
   <div class="workflow-stage-grid training-workflow-grid">
     {% for key, label, description in training_workflow_stages %}
       <article class="workflow-stage-card workflow-stage-pending">
-        <div class="workflow-stage-top"><span class="workflow-stage-index">{{ forloop.counter|add:"6"|stringformat:"02d" }}</span><span class="workflow-stage-status">·</span></div>
+        <div class="workflow-stage-top"><span class="workflow-stage-index">{{ forloop.counter|add:"5"|stringformat:"02d" }}</span><span class="workflow-stage-status">·</span></div>
         <h4>{{ label }}</h4><p>{{ description }}</p><small>Completes as the experiment progresses.</small>
       </article>
     {% endfor %}

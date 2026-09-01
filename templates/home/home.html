@@ -102,7 +102,7 @@
       <div class="pipeline-step"><span>04</span><div><strong>Explain & monitor</strong><small>Keep humans in the loop</small></div><b>→</b></div>
     </div>
   </div>
-  <div class="panel active-model-card"><div class="panel-heading"><div><p class="eyebrow">MODEL REGISTRY</p><h3>Active model</h3></div><span class="live-badge"><i></i> Live</span></div>
+  <div class="panel active-model-card"><div class="panel-heading"><div><p class="eyebrow">MODEL REGISTRY</p><h3>Active model</h3></div>{% if model_registry %}<span class="live-badge"><i></i> Live</span>{% else %}<span class="model-waiting-badge"><i></i> Waiting</span>{% endif %}</div>
     {% if model_registry %}
     <div class="model-live">
       <div class="model-live-heading"><div class="model-emblem model-emblem-live">✓</div><div><strong>{{ model_registry.run.get_architecture_display }}</strong><small>Completed run #{{ model_registry.run.pk }}</small></div></div>
@@ -112,7 +112,20 @@
       <a class="button button-outline" href="{% url 'prediction:predict' %}">Use for prediction <span>→</span></a>
     </div>
     {% else %}
-    <div class="model-empty"><div class="model-emblem">◈</div><strong>No model registered yet</strong><p>Complete a training run to make your best model available for prediction.</p><a class="button button-outline" href="{% url 'training:home' %}">Explore training</a></div>
+     <div class="model-empty">
+       <div class="model-empty-main">
+         <div class="model-empty-icon" aria-hidden="true"><span>◈</span><i></i></div>
+         <div class="model-empty-copy">
+           <span class="model-empty-kicker">READY WHEN YOU ARE</span>
+           <strong>No model connected</strong>
+           <p>Finish one benchmark to make a versioned checkpoint available for review.</p>
+         </div>
+       </div>
+       <div class="model-empty-action">
+         <a class="button button-primary" href="{% url 'training:home' %}">Set up a model <span>→</span></a>
+         <small>Requires one completed experiment</small>
+       </div>
+     </div>
     {% endif %}
   </div>
 </section>
