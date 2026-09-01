@@ -19,6 +19,7 @@ DATASET_WORKFLOW_STAGES = (
     ("stage_4", "Stage 4 · Leakage control", "Group-aware or stratified split recommendation"),
     ("stage_5", "Stage 5 · Bias & imbalance", "Subgroup availability and imbalance handling"),
 )
+WORKFLOW_VERSION = 1
 
 
 def _public_validation(report):
@@ -33,6 +34,7 @@ def run_dataset_pipeline(dataset):
     dataset.status = "auditing"
     dataset.pipeline = {
         "status": "running",
+            "workflow_version": WORKFLOW_VERSION,
         "stages": {key: "queued" for key, _label, _description in DATASET_WORKFLOW_STAGES},
     }
     dataset.save(update_fields=["status", "pipeline", "updated_at"])
@@ -73,6 +75,7 @@ def run_dataset_pipeline(dataset):
         dataset.status = "ready" if validation["valid"] else "needs_review"
         dataset.pipeline = {
             "status": "completed" if validation["valid"] else "needs_review",
+            "workflow_version": WORKFLOW_VERSION,
             "stages": audit["stages"],
             "workflow": {
                 "stage_0": {
@@ -119,6 +122,7 @@ def run_dataset_pipeline(dataset):
         }
         dataset.pipeline = {
             "status": "failed",
+            "workflow_version": WORKFLOW_VERSION,
             "error": str(exc),
             "stages": {key: "failed" for key, _label, _description in DATASET_WORKFLOW_STAGES},
         }

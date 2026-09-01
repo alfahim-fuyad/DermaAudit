@@ -25,7 +25,7 @@ def decide_confidence(
     accepted = confidence >= threshold and margin >= margin_threshold
     return {
         "decision": "accept" if accepted else "abstain",
-        "review_required": True,
+        "review_required": not accepted,
         "threshold": threshold,
         "margin_threshold": margin_threshold,
         "margin": round(margin, 4),

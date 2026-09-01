@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET
 from apps.datasets.models import Dataset
 from apps.reports.services.cleanup import clear_training_runs
 from .models import TrainingRun
+from .services.experiments import EXPERIMENT_VARIANTS, build_experiment_plan
 from .services.trainer import DEFAULT_SPLIT, EPOCHS, run_training
 
 
@@ -54,6 +55,7 @@ def _complete_training(run_id, manage_connections=True):
 
     if manage_connections:
         close_old_connections()
+    run = None
     try:
         run = TrainingRun.objects.select_related("dataset").get(pk=run_id)
         def save_progress(progress):
@@ -63,7 +65,6 @@ def _complete_training(run_id, manage_connections=True):
         run.progress_callback = save_progress
         result = run_training(run)
     except Exception as exc:
-        run = TrainingRun.objects.filter(pk=run_id).first()
         if run:
             run.status = "failed"
             run.config = {
@@ -104,6 +105,7 @@ def start_training(request):
         dataset = Dataset.objects.filter(pk=request.POST.get("dataset"), status="ready").first()
         architecture = request.POST.get("architecture", "efficientnet_b0")
         valid_architectures = {value for value, _label in TrainingRun.ARCHITECTURES}
+        experiment_variant = request.POST.get("experiment_variant", "original")
         split_defaults = {
             "train": request.POST.get("train_split", DEFAULT_SPLIT[0]),
             "validation": request.POST.get("validation_split", DEFAULT_SPLIT[1]),
@@ -119,6 +121,9 @@ def start_training(request):
         if not dataset:
             messages.error(request, "Choose a successfully audited dataset before training.")
             return render(request, "training/training.html", _training_context(split_defaults, epochs_default))
+        if dataset.training_runs.filter(status="running").exists():
+            messages.error(request, "A training run is already active for this dataset.")
+            return render(request, "training/training.html", _training_context(split_defaults, epochs_default))
         if any(value < 1 for value in split) or sum(split) != 100:
             messages.error(request, "Training, validation, and test splits must be at least 1% and total 100%.")
             return render(request, "training/training.html", _training_context(split_defaults, epochs_default))
@@ -127,6 +132,9 @@ def start_training(request):
             return render(request, "training/training.html", _training_context(split_defaults, epochs_default))
         if architecture not in valid_architectures:
             messages.error(request, "Choose a supported model architecture.")
+            return render(request, "training/training.html", _training_context(split_defaults, epochs_default))
+        if experiment_variant not in {variant["key"] for variant in EXPERIMENT_VARIANTS}:
+            messages.error(request, "Choose a supported experiment variant.")
             return render(request, "training/training.html", _training_context(split_defaults, epochs_default))
 
         run = TrainingRun.objects.create(
@@ -139,6 +147,7 @@ def start_training(request):
                 "split_ratios": list(split),
                 "device": "CPU",
                 "execution": "running",
+                "experiment_variant": experiment_variant,
                 "progress": {
                     "step": "validate",
                     "percent": 5,
@@ -186,6 +195,7 @@ def experiments(request):
         {
             "runs": runs,
             "active_model": runs.filter(is_active=True, status="completed").first(),
+            "experiment_plan": build_experiment_plan(),
             "page_title": "Experiments",
         },
     )
@@ -197,7 +207,17 @@ def activate_model(request, pk):
         return HttpResponseNotAllowed(["POST"])
 
     run = get_object_or_404(TrainingRun.objects.select_related("dataset"), pk=pk)
-    if run.status != "completed" or not run.config.get("checkpoint"):
+    checkpoint_name = (run.config or {}).get("checkpoint")
+    checkpoint_path = None
+    if checkpoint_name:
+        from pathlib import Path
+        checkpoint_path = (Path(settings.MEDIA_ROOT) / checkpoint_name).resolve()
+    if (
+        run.status != "completed"
+        or not checkpoint_name
+        or not checkpoint_path
+        or Path(settings.MEDIA_ROOT).resolve() not in checkpoint_path.parents
+    ):
         messages.error(request, "Only a completed run with a saved checkpoint can be used for predictions.")
         return redirect("training:experiments")
 

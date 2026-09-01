@@ -61,6 +61,7 @@ def validate_upload(upload):
         "sample_count": 0,
         "readable_count": 0,
         "invalid_count": 0,
+        "unlabelled_count": 0,
         "classes": [],
         "class_counts": {},
         "duplicate_count": 0,
@@ -164,6 +165,8 @@ def validate_upload(upload):
                     report["readable_count"] += 1
                     if label:
                         report["class_counts"][label] = report["class_counts"].get(label, 0) + 1
+                    else:
+                        report["unlabelled_count"] += 1
                     if duplicate:
                         report["duplicate_count"] += 1
                     if low_quality:
@@ -200,6 +203,10 @@ def validate_upload(upload):
         report["errors"].append("At least two labelled classes are required.")
     if report["sample_count"] != report["readable_count"]:
         report["warnings"].append("Some images could not be validated.")
+    if report["unlabelled_count"]:
+        report["errors"].append(
+            f"{report['unlabelled_count']:,} readable image(s) do not have a class label."
+        )
     report["valid"] = bool(
         report["readable_count"]
         and len(report["classes"]) >= 2

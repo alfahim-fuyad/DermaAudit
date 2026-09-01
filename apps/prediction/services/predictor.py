@@ -10,6 +10,36 @@ from .confidence import decide_confidence
 from .xai import generate_gradcam
 
 
+MAX_PREDICTION_BYTES = 10 * 1024 * 1024
+PREDICTION_EXTENSIONS = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff"}
+
+
+def validate_prediction_upload(uploaded_file):
+    """Validate a single image before looking up a model or saving the file."""
+    if not uploaded_file:
+        raise ValueError("Choose an image before continuing.")
+    if getattr(uploaded_file, "size", 0) > MAX_PREDICTION_BYTES:
+        raise ValueError("The image exceeds the 10 MB upload limit.")
+    suffix = Path(getattr(uploaded_file, "name", "")).suffix.lower()
+    if suffix not in PREDICTION_EXTENSIONS:
+        raise ValueError("Use a JPG, PNG, WEBP, BMP, GIF, or TIFF image.")
+    try:
+        uploaded_file.seek(0)
+        with Image.open(uploaded_file) as image:
+            image.verify()
+        uploaded_file.seek(0)
+        with Image.open(uploaded_file) as image:
+            if not image.size[0] or not image.size[1]:
+                raise ValueError("The image has no usable dimensions.")
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"That file is not a readable image: {exc}") from exc
+    finally:
+        try:
+            uploaded_file.seek(0)
+        except (AttributeError, OSError):
+            pass
+
+
 def _latest_checkpoint():
     media_root = Path(settings.MEDIA_ROOT).resolve()
     completed_runs = TrainingRun.objects.filter(
@@ -150,6 +180,7 @@ def _analyze_with_checkpoint(uploaded_file):
 
 def analyze_image(uploaded_file):
     """Use a valid selected checkpoint, then the newest valid completed checkpoint."""
+    validate_prediction_upload(uploaded_file)
     checkpoint_analysis = _analyze_with_checkpoint(uploaded_file)
     if checkpoint_analysis is not None:
         return checkpoint_analysis

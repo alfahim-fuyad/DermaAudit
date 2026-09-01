@@ -75,11 +75,20 @@ def dataset_audit(request, pk):
                               "label_consistency": "Pending", "imbalance_ratio": "Pending",
                               "recommendation": "Run an audit to generate recommendations."}
     stages = audit.get("stages", {})
+    pipeline_workflow = (dataset.pipeline or {}).get("workflow", {})
+    has_stage = lambda key, fallback: (
+        pipeline_workflow.get(key, {}).get("status")
+        or stages.get(fallback)
+        or ("completed" if dataset.status == "ready" and dataset.profile else "")
+    )
     progress = {
-        "profile": bool(dataset.profile),
+        "profile": bool(dataset.profile) or has_stage("stage_1", "profiling") == "completed",
         "quality": bool(audit.get("quality_score") not in (None, "—", "Pending")),
-        "leakage": stages.get("leakage") == "completed",
-        "ready": dataset.status == "ready" and stages.get("imbalance") == "completed",
+        "leakage": has_stage("stage_4", "leakage") == "completed",
+        "ready": dataset.status == "ready" and (
+            has_stage("stage_5", "stage_5") == "completed"
+            or stages.get("imbalance") == "completed"
+        ),
     }
     completed_steps = sum(progress.values())
     progress_percent = {0: 0, 1: 0, 2: 33, 3: 66, 4: 100}[completed_steps]
@@ -104,15 +113,15 @@ def dataset_audit(request, pk):
                 "key": key,
                 "label": label,
                 "description": description,
-                "status": (dataset.pipeline or {}).get("workflow", {}).get(key, {}).get(
+                 "status": pipeline_workflow.get(key, {}).get(
                     "status",
                     "completed" if stages.get(
-                        {"stage_0": "validation", "stage_1": "profiling",
+                         {"stage_0": "validation", "stage_1": "profiling",
                          "stage_2": "harmonization", "stage_3": "audit",
-                         "stage_4": "leakage", "stage_5": "bias"}.get(key, key)
+                          "stage_4": "leakage", "stage_5": "stage_5"}.get(key, key)
                     ) == "completed" else "pending",
                 ),
-                "summary": (dataset.pipeline or {}).get("workflow", {}).get(key, {}).get(
+                 "summary": pipeline_workflow.get(key, {}).get(
                     "summary", "Run the audit to generate this evidence."
                 ),
             }

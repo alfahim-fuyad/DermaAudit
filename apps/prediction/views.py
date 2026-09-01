@@ -22,11 +22,8 @@ def predict(request):
                     explanation=analysis,
                 )
                 return redirect("prediction:result", pk=item.pk)
-            except Exception as exc:
-                if isinstance(exc, (ValueError, OSError, RuntimeError)):
-                    messages.error(request, str(exc))
-                else:
-                    messages.error(request, "That file could not be read as an image. Use JPG, PNG, or WEBP.")
+            except (ValueError, OSError, RuntimeError, EOFError, KeyError, TypeError) as exc:
+                messages.error(request, str(exc))
     active_model, _checkpoint_path = _latest_checkpoint()
     return render(
         request,

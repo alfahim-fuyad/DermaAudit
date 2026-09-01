@@ -30,6 +30,7 @@ def build_profile(validation):
         "class_distribution": validation.get("class_counts", {}),
         "readable_images": validation.get("readable_count", 0),
         "invalid_images": validation.get("invalid_count", 0),
+        "unlabelled_images": validation.get("unlabelled_count", 0),
         "low_quality_images": low_quality_images,
         "metadata_files": metadata.get("files", []),
         "metadata_columns": metadata.get("columns", []),

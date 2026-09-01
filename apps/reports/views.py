@@ -16,6 +16,43 @@ def _percent(value):
         return 0
 
 
+def _data_drift(predictions, active_model):
+    """Compare observed prediction classes with the active model reference set."""
+    reference = (
+        (active_model.config or {}).get("training_distribution", {})
+        if active_model else {}
+    )
+    if not reference or not predictions:
+        return {
+            "status": "not_available",
+            "detail": "A completed model and predictions are needed before drift can be measured.",
+        }
+
+    reference_total = sum(float(value or 0) for value in reference.values())
+    observed_counts = Counter(prediction.predicted_class for prediction in predictions)
+    observed_total = len(predictions)
+    labels = set(reference) | set(observed_counts)
+    shifts = {
+        label: round(
+            observed_counts.get(label, 0) / observed_total
+            - float(reference.get(label, 0)) / reference_total,
+            4,
+        )
+        for label in labels
+    }
+    largest_shift = max((abs(value) for value in shifts.values()), default=0)
+    return {
+        "status": "review" if largest_shift >= 0.20 else "monitoring",
+        "largest_class_shift": largest_shift,
+        "class_shifts": shifts,
+        "detail": (
+            "Observed prediction mix differs materially from the training reference."
+            if largest_shift >= 0.20 else
+            "Observed prediction mix is being compared with the training reference."
+        ),
+    }
+
+
 def dashboard(request):
     datasets = list(Dataset.objects.all().order_by("-updated_at"))
     runs = list(TrainingRun.objects.select_related("dataset").order_by("-created_at"))
@@ -81,6 +118,7 @@ def live_status(request):
     """Return the small, safe-to-poll summary used by the live reports view."""
     datasets = list(Dataset.objects.all())
     runs = list(TrainingRun.objects.select_related("dataset").order_by("-created_at"))
+    predictions = list(Prediction.objects.all().order_by("-created_at"))
     predictions_count = Prediction.objects.count()
     completed_runs = [run for run in runs if run.status == "completed"]
     active_runs = [run for run in runs if run.status == "running"]
@@ -129,8 +167,7 @@ def live_status(request):
             "review_queue": sum(1 for prediction in predictions if prediction.review_required),
             "class_distribution": dict(class_distribution),
             "data_drift": {
-                "status": "not_available",
-                "detail": "A reference distribution is needed before drift can be measured.",
+                **_data_drift(predictions, active_model),
             },
             "fairness_drift": {
                 "status": "not_available",

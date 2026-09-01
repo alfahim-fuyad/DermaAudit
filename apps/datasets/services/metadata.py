@@ -188,6 +188,13 @@ def attach_metadata(records, summary, rows):
             if group_id:
                 record["group_id"] = group_id
                 group_ids.add(group_id)
+        subgroup_values = {
+            column: str(row.get(column) or "").strip()
+            for column in summary.get("subgroup_columns", [])
+            if str(row.get(column) or "").strip()
+        }
+        if subgroup_values:
+            record["subgroups"] = subgroup_values
 
     summary["matched_images"] = len(matched_rows)
     summary["unmatched_rows"] = max(0, len(rows) - len(matched_rows))

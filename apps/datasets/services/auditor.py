@@ -12,7 +12,8 @@ def build_audit(validation, profile, leakage, bias, imbalance):
     low_quality = validation.get("low_quality_count", 0)
     quality_score = max(0, quality_score - min(15, low_quality))
     label_mismatches = profile.get("metadata_label_mismatches", 0)
-    labelled_images = readable - label_mismatches
+    unlabelled_images = validation.get("unlabelled_count", 0)
+    labelled_images = max(0, readable - label_mismatches - unlabelled_images)
     label_consistency = round((labelled_images / readable) * 100) if readable else 0
     recommendation_parts = [leakage["recommendation"], imbalance["recommendation"]]
     if bias["available"]:
@@ -32,6 +33,7 @@ def build_audit(validation, profile, leakage, bias, imbalance):
             "readable": readable,
             "invalid": invalid,
             "low_quality": low_quality,
+            "unlabelled": unlabelled_images,
             "minimum_dimension": 32,
         },
         "leakage": leakage,
@@ -46,5 +48,6 @@ def build_audit(validation, profile, leakage, bias, imbalance):
             "leakage": "completed" if readable else "blocked",
             "bias": "completed" if readable else "blocked",
             "imbalance": "completed" if readable else "blocked",
+            "stage_5": "completed" if readable else "blocked",
         },
     }

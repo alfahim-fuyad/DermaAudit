@@ -35,6 +35,14 @@
   </div>
 </section>
 
+<div class="audit-progress{% if progress.ready %} is-complete{% endif %}" style="--audit-progress: {{ progress_percent }}%">
+  <div class="audit-progress-line"><span></span></div>
+  <div class="audit-step {% if progress.profile %}completed{% elif current_step == 'profile' %}active{% endif %}"><b>1</b>Profile</div>
+  <div class="audit-step {% if progress.quality %}completed{% elif current_step == 'quality' %}active{% endif %}"><b>2</b>Quality</div>
+  <div class="audit-step {% if progress.leakage %}completed{% elif current_step == 'leakage' %}active{% endif %}"><b>3</b>Leakage</div>
+  <div class="audit-step {% if progress.ready %}completed{% elif current_step == 'ready' %}active{% endif %}"><b>4</b>Ready</div>
+</div>
+
 <div class="audit-grid">
   <div class="panel audit-score">
     <p class="eyebrow">AUDIT SCORE</p>

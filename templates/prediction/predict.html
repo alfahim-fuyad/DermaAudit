@@ -1,56 +1,62 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-intro">
+<section class="page-intro prediction-intro">
   <div>
     <p class="eyebrow">CLASSIFICATION WORKSPACE / STAGES 10–12</p>
-    <h1>New prediction</h1>
-    <p class="subhead">Validate one image, apply the active model, explain the output, and keep a human in the loop.</p>
+    <h1>Review an image</h1>
+    <p class="subhead">Run one model-assisted review with a clear evidence trail and a human decision at the end.</p>
   </div>
-  <span class="pill pill-mint">Privacy-first logging</span>
+  <div class="prediction-intro-meta">
+    <span class="pill pill-mint">Privacy-first logging</span>
+    <small>One image at a time</small>
+  </div>
 </section>
 
-<div class="prediction-workflow-strip">
-  <div class="prediction-workflow-step is-complete"><b>10</b><span><strong>Explain</strong><small>Grad-CAM artifact</small></span></div>
-  <div class="prediction-workflow-step is-active"><b>11</b><span><strong>Model store</strong><small>Active checkpoint</small></span></div>
-  <div class="prediction-workflow-step"><b>12</b><span><strong>Monitor</strong><small>Review and drift loop</small></span></div>
+<div class="prediction-workflow-strip" aria-label="Prediction workflow">
+  <div class="prediction-workflow-step is-complete"><b>10</b><span><strong>Explain</strong><small>Grad-CAM artifact</small></span><i>Done</i></div>
+  <div class="prediction-workflow-step is-active"><b>11</b><span><strong>Model store</strong><small>Active checkpoint</small></span><i>Current</i></div>
+  <div class="prediction-workflow-step"><b>12</b><span><strong>Monitor</strong><small>Review and drift loop</small></span><i>Next</i></div>
 </div>
 
 <div class="prediction-layout">
   <div class="panel prediction-upload">
+    <div class="panel-heading prediction-panel-heading">
+      <div><p class="eyebrow">START A REVIEW</p><h3>Upload one image</h3><p class="panel-supporting-text">The original file is kept with the analysis record for traceability.</p></div>
+      <span class="step-chip">01</span>
+    </div>
     <form method="post" enctype="multipart/form-data" id="predictionForm">
       {% csrf_token %}
-      <label class="prediction-dropzone" id="predictionDrop">
+      <label class="prediction-dropzone" id="predictionDrop" tabindex="0">
         <input type="file" name="image" id="predictionFile" accept=".jpg,.jpeg,.jfif,.png,.webp,.bmp,.gif,.tif,.tiff" required>
-        <span class="image-placeholder">◎</span><strong>Drop an image here</strong>
-        <small>JPG, PNG, WEBP, BMP, GIF, or TIFF · max 10 MB</small>
+        <span class="image-placeholder" aria-hidden="true">◎</span>
+        <span class="dropzone-copy"><strong>Drop an image here</strong><small>or choose a file from your device</small></span>
+        <span class="dropzone-action">Browse files</span>
+        <small class="dropzone-formats">JPG, PNG, WEBP, BMP, GIF, or TIFF · max 10 MB</small>
         <span class="file-name" id="predictionName"></span>
       </label>
-      <div class="review-consent"><span class="check-icon">✓</span><p><strong>Human review is always part of the loop</strong><small>Acceptable confidence still requires expert verification before use.</small></p></div>
-      <button class="button button-primary button-full" {% if not active_model %}disabled{% endif %}>Analyze image <span>→</span></button>
+      <p class="form-error prediction-client-error" id="predictionClientError" role="alert" hidden></p>
+      <div class="review-consent"><span class="check-icon">✓</span><p><strong>Human review is always part of the loop</strong><small>Confidence supports review; it does not replace expert judgement.</small></p></div>
+      <button class="button button-primary button-full prediction-submit" {% if not active_model %}disabled{% endif %}>Analyze image <span>→</span></button>
       {% if not active_model %}<p class="form-note prediction-blocked-note">Complete an experiment and select a saved checkpoint before requesting an AI prediction.</p>{% endif %}
     </form>
   </div>
   <div class="panel prediction-info">
-    <div class="panel-heading"><div><p class="eyebrow">HOW IT WORKS</p><h3>A result you can inspect</h3></div></div>
+    <div class="panel-heading prediction-panel-heading"><div><p class="eyebrow">MODEL CONTEXT</p><h3>A result you can inspect</h3></div><span class="step-chip step-chip-muted">02</span></div>
+    <div class="active-model-card {% if not active_model %}is-unavailable{% endif %}">
+      <span class="model-status-dot"></span>
+      <div>
+        <small>{% if active_model %}ACTIVE CHECKPOINT{% else %}CHECKPOINT REQUIRED{% endif %}</small>
+        <strong>{% if active_model %}{{ active_model.get_architecture_display }}{% else %}No active model{% endif %}</strong>
+        <p>{% if active_model %}{{ active_model.dataset.name|default:"Unassigned dataset" }} · calibrated confidence{% else %}Select a completed checkpoint from Model training to unlock review.{% endif %}</p>
+      </div>
+    </div>
     <div class="explain-steps">
       <p><b>01</b><span><strong>Validate</strong><small>Image format, size, and model compatibility</small></span></p>
       <p><b>02</b><span><strong>Predict</strong><small>Active model and calibrated confidence</small></span></p>
       <p><b>03</b><span><strong>Explain</strong><small>Grad-CAM, top alternatives, and review state</small></span></p>
     </div>
-    <div class="prediction-warning">ⓘ <span>{% if active_model %}Active model: {{ active_model.get_architecture_display }} · {{ active_model.dataset.name|default:"Unassigned dataset" }}. The model will abstain when confidence or class margin is low.{% else %}No active model is registered. Prediction is blocked until a completed checkpoint is selected.{% endif %}</span></div>
+    <div class="prediction-warning"><span class="warning-mark" aria-hidden="true">i</span><span>{% if active_model %}The model abstains when confidence or class margin is low. Low-confidence results go to expert review.{% else %}Prediction is blocked until a completed checkpoint is selected.{% endif %}</span></div>
   </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-  const input = document.getElementById('predictionFile');
-  const zone = document.getElementById('predictionDrop');
-  const name = document.getElementById('predictionName');
-  input?.addEventListener('change', () => {
-    name.textContent = input.files[0]?.name || '';
-    zone.classList.toggle('has-file', !!input.files.length);
-  });
-</script>
 {% endblock %}

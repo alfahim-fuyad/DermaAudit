@@ -8,6 +8,10 @@ from pathlib import Path
 from django.conf import settings
 
 from apps.datasets.services.validator import validate_upload
+from apps.reports.services.calibration import build_calibration_report
+from apps.reports.services.fairness import build_fairness_report
+from apps.reports.services.statistics import build_run_statistics
+from .experiments import build_experiment_plan
 
 
 IMAGE_SIZE = 64
@@ -113,6 +117,45 @@ def _group_split_records(records, split=DEFAULT_SPLIT):
         partitions[target_index].extend(items)
         counts[target_index] += len(items)
     return tuple(partitions)
+
+
+def _split_plan(train_records, validation_records, test_records, split, group_aware):
+    """Persist the exact partition policy and counts used by a training run."""
+    partitions = {
+        "train": train_records,
+        "validation": validation_records,
+        "test": test_records,
+    }
+    return {
+        "strategy": "group-aware" if group_aware else "stratified",
+        "ratios": list(split),
+        "counts": {name: len(items) for name, items in partitions.items()},
+        "classes": {
+            name: sorted({record["label"] for record in items})
+            for name, items in partitions.items()
+        },
+        "group_overlap": _group_overlap(partitions) if group_aware else [],
+    }
+
+
+def _group_overlap(partitions):
+    overlaps = []
+    names = list(partitions)
+    for index, first_name in enumerate(names):
+        first_groups = {
+            record.get("group_id") for record in partitions[first_name]
+            if record.get("group_id")
+        }
+        for second_name in names[index + 1:]:
+            second_groups = {
+                record.get("group_id") for record in partitions[second_name]
+                if record.get("group_id")
+            }
+            overlaps.extend(
+                f"{first_name}/{second_name}:{group}"
+                for group in sorted(first_groups & second_groups)
+            )
+    return overlaps
 
 
 def _read_images(dataset, records):
@@ -367,6 +410,16 @@ def run_training(run, progress_callback=None):
 
     split_function = _group_split_records if any(record.get("group_id") for record in report["records"]) else _split_records
     train_records, validation_records, test_records = split_function(report["records"], split)
+    group_aware = split_function is _group_split_records
+    split_plan = _split_plan(
+        train_records,
+        validation_records,
+        test_records,
+        split,
+        group_aware,
+    )
+    if split_plan["group_overlap"]:
+        raise ValueError("The selected split contains overlapping entity groups.")
     classes = sorted(report["classes"])
     label_to_index = {label: index for index, label in enumerate(classes)}
     _report_progress(
@@ -451,6 +504,7 @@ def run_training(run, progress_callback=None):
     evaluation_loader = test_loader or validation_loader or train_loader
     evaluation_split = "test" if test_loader else "validation" if validation_loader else "training"
     evaluation = _evaluate(torch, model, evaluation_loader, classes, len(classes))
+    evaluation_logits, evaluation_targets = _collect_outputs(torch, model, evaluation_loader)
     calibration_loader = validation_loader or test_loader
     calibration_logits, calibration_targets = _collect_outputs(torch, model, calibration_loader)
     temperature = _fit_temperature(torch, calibration_logits, calibration_targets)
@@ -459,6 +513,24 @@ def run_training(run, progress_callback=None):
         calibration_logits / temperature if calibration_logits is not None else None,
         calibration_targets,
     )
+    calibration_report = build_calibration_report(calibration)
+    evaluation_records = test_records or validation_records
+    evaluation_predictions = (
+        evaluation_logits.argmax(dim=1).tolist()
+        if evaluation_logits is not None else []
+    )
+    fairness = build_fairness_report(
+        evaluation_records,
+        evaluation_targets.tolist() if evaluation_targets is not None else [],
+        evaluation_predictions,
+        classes,
+    )
+    statistics = build_run_statistics(evaluation)
+    training_distribution = {
+        label: count for label, count in zip(classes, class_counts)
+    }
+    experiment_variant = run.config.get("experiment_variant", "original")
+    experiment_plan = build_experiment_plan(experiment_variant)
 
     _report_progress(
         progress_callback,
@@ -493,6 +565,10 @@ def run_training(run, progress_callback=None):
             "state_dict": model.state_dict(),
             "evaluation": evaluation,
             "calibration": calibration,
+            "fairness": fairness,
+            "training_distribution": training_distribution,
+            "dataset_id": run.dataset_id,
+            "dataset_pipeline": run.dataset.pipeline if run.dataset else {},
         },
         checkpoint_path,
     )
@@ -522,13 +598,23 @@ def run_training(run, progress_callback=None):
         "temperature": temperature,
         "evaluation": evaluation,
         "calibration": calibration,
+        "reliability": {
+            "calibration": calibration_report,
+            "fairness": fairness,
+        },
+        "statistics": statistics,
+        "training_distribution": training_distribution,
+        "split_plan": split_plan,
+        "experiment_variant": experiment_variant,
+        "experiment_plan": experiment_plan,
         "workflow_stages": {
             "stage_6_experiments": "completed",
             "stage_7_modeling": "completed",
             "stage_8_evaluation": "completed",
-            "stage_9_reliability": calibration["status"],
+            "stage_9_reliability": "completed",
             "stage_10_xai": "available_on_prediction",
             "stage_11_model_store": "completed",
+            "stage_12_monitoring": "available_after_predictions",
         },
         "checkpoint": str(checkpoint_path.relative_to(settings.MEDIA_ROOT)),
         "final_loss": epoch_losses[-1],
