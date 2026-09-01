@@ -1,2 +1,37 @@
 {% extends "base.html" %}
-{% block content %}<section class="page-intro"><div><p class="eyebrow">MODEL DEVELOPMENT / HISTORY</p><h1>Experiments</h1><p class="subhead">A reproducible record of model comparisons.</p></div><div class="page-actions"><a class="button button-primary" href="{% url 'training:home' %}">＋ New experiment</a>{% if runs %}<form method="post" action="{% url 'training:clear_experiments' %}" onsubmit="return confirm('Clear all experiment history? Training records and saved checkpoints will be permanently deleted.');">{% csrf_token %}<button class="button button-danger" type="submit">Clear history</button></form>{% endif %}</div></section><div class="panel table-panel">{% if runs %}<div class="data-table"><div class="table-row table-head"><span>Run</span><span>Dataset</span><span>Accuracy</span><span>Macro-F1</span><span>Date</span></div>{% for run in runs %}<div class="table-row"><span><i class="dataset-icon">{{ forloop.counter|stringformat:"02d" }}</i><strong>{{ run.get_architecture_display }}</strong></span><span>{{ run.dataset.name|default:"Unassigned" }}</span><span>{{ run.accuracy|floatformat:3 }}</span><span>{{ run.macro_f1|floatformat:3 }}</span><span>{{ run.created_at|date:"M j, Y" }}</span></div>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon">◈</div><h3>No experiment history</h3><p>Start a benchmark to compare architectures on the same split.</p><a class="button button-primary" href="{% url 'training:home' %}">Configure training</a></div>{% endif %}</div>{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div><p class="eyebrow">MODEL DEVELOPMENT / HISTORY</p><h1>Experiments</h1><p class="subhead">Compare saved checkpoints and decide which model powers new predictions.</p></div>
+  <div class="page-actions"><a class="button button-primary" href="{% url 'training:home' %}">＋ New experiment</a>{% if runs %}<form method="post" action="{% url 'training:clear_experiments' %}" onsubmit="return confirm('Clear all experiment history? Training records and saved checkpoints will be permanently deleted.');">{% csrf_token %}<button class="button button-danger" type="submit">Clear history</button></form>{% endif %}</div>
+</section>
+{% if active_model %}
+<section class="panel selected-model-banner">
+  <span class="selected-model-icon">✓</span>
+  <div><p class="eyebrow">ACTIVE PREDICTION MODEL</p><strong>{{ active_model.get_architecture_display }}</strong><small>{{ active_model.dataset.name|default:"Unassigned dataset" }} · Accuracy {{ active_model.accuracy|floatformat:3 }} · This checkpoint will be used for new predictions.</small></div>
+  <a class="text-link" href="{% url 'prediction:predict' %}">Test model →</a>
+</section>
+{% else %}
+<section class="panel selected-model-banner selected-model-banner-muted">
+  <span class="selected-model-icon">i</span>
+  <div><p class="eyebrow">ACTIVE PREDICTION MODEL</p><strong>No model selected yet</strong><small>Complete an experiment, then choose “Use for predictions” below.</small></div>
+</section>
+{% endif %}
+<div class="panel table-panel">
+  {% if runs %}
+  <div class="data-table">
+    <div class="table-row table-head"><span>Run</span><span>Dataset</span><span>Accuracy</span><span>Macro-F1</span><span>Model selection</span></div>
+    {% for run in runs %}
+    <div class="table-row experiment-row">
+      <span><i class="dataset-icon">{{ forloop.counter|stringformat:"02d" }}</i><strong>{{ run.get_architecture_display }}</strong></span>
+      <span>{{ run.dataset.name|default:"Unassigned" }}</span>
+      <span>{% if run.status == "completed" %}{{ run.accuracy|floatformat:3 }}{% else %}<em class="pending-value">{{ run.get_status_display }}</em>{% endif %}</span>
+      <span>{% if run.status == "completed" %}{{ run.macro_f1|floatformat:3 }}{% else %}<em class="pending-value">Pending</em>{% endif %}</span>
+      <span>{% if run.is_active %}<b class="active-model-badge">Active for predictions</b>{% elif run.status == "completed" and run.config.checkpoint %}<form method="post" action="{% url 'training:activate_model' run.pk %}">{% csrf_token %}<button class="button button-small button-outline activate-model-button" type="submit">Use for predictions</button></form>{% else %}<em class="pending-value">Checkpoint pending</em>{% endif %}<small class="experiment-date">{{ run.created_at|date:"M j, Y" }}</small></span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><div class="empty-icon">◈</div><h3>No experiment history</h3><p>Start a benchmark to compare architectures on the same split.</p><a class="button button-primary" href="{% url 'training:home' %}">Configure training</a></div>
+  {% endif %}
+</div>
+{% endblock %}

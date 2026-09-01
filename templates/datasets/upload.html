@@ -15,7 +15,7 @@
         <span class="upload-cloud">↥</span><strong>Drop your dataset ZIP here</strong>
         <small>or <u>browse files</u> · ZIP up to 2 GB</small><span class="file-name" id="fileName"></span>
       </label>
-      <div class="upload-guidance"><span>ⓘ</span><div><strong>What can I upload?</strong><p>Upload one ZIP with class folders, optional train/validation/test folders, or a CSV/JSON manifest with image labels. JPG, PNG, WEBP, BMP, GIF, JFIF, and TIFF are supported.</p></div></div>
+       <div class="upload-guidance"><span>ⓘ</span><div><strong>What can I upload?</strong><p>Upload one ZIP with class folders, optional train/validation/test folders, or flat images paired with a CSV/JSON manifest. JPG, PNG, WEBP, BMP, GIF, JFIF, and TIFF are supported. A manifest must include an image filename/path and a label/class column.</p></div></div>
       <button class="button button-primary button-full">Upload and profile <span>→</span></button>
     </form>
   </div>
@@ -48,7 +48,7 @@
     │   └── image_007.jpg
     └── class_b/
         └── image_008.jpg</code></pre>
-      <p class="tutorial-note"><strong>Important:</strong> Replace <code>class_a</code> and <code>class_b</code> with your real labels, such as <code>healthy</code> and <code>pneumonia</code>. At least two classes are required.</p>
+      <p class="tutorial-note"><strong>Important:</strong> Replace <code>class_a</code> and <code>class_b</code> with your real labels. <code>train</code>, <code>validation</code>, and <code>test</code> are split folders—not classes. At least two classes are required.</p>
     </article>
 
     <article class="panel tutorial-card">
@@ -62,7 +62,7 @@
 │   └── dog_002.png
 └── rabbits/
     └── rabbit_001.tiff</code></pre>
-      <p class="tutorial-note">Every image must be inside a class folder. Files placed directly in <code>my_dataset/</code> do not have a reliable label.</p>
+      <p class="tutorial-note">Every image must be inside a class folder. Files placed directly in <code>my_dataset/</code> do not have a reliable label unless a manifest maps each filename to a class.</p>
     </article>
 
     <article class="panel tutorial-card">

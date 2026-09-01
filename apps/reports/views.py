@@ -1,6 +1,7 @@
 from django.shortcuts import redirect, render
 from django.contrib import messages
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed, JsonResponse
+from django.utils import timezone
 from apps.datasets.models import Dataset
 from apps.prediction.models import Prediction
 from apps.training.models import TrainingRun
@@ -20,6 +21,7 @@ def dashboard(request):
     predictions = list(Prediction.objects.all().order_by("-created_at"))
 
     completed_runs = [run for run in runs if run.status == "completed"]
+    active_model = next((run for run in completed_runs if run.is_active), None)
     audited_count = sum(1 for dataset in datasets if dataset.audit)
     ready_count = sum(1 for dataset in datasets if dataset.status == "ready")
     performance_chart = []
@@ -67,8 +69,48 @@ def dashboard(request):
         "average_accuracy": average_accuracy,
         "best_run": best_run,
         "best_accuracy": best_accuracy,
+        "active_model": active_model,
+        "active_runs": [run for run in runs if run.status == "running"],
         "next_action": next_action,
         "page_title": "Reports",
+    })
+
+
+def live_status(request):
+    """Return the small, safe-to-poll summary used by the live reports view."""
+    datasets = list(Dataset.objects.all())
+    runs = list(TrainingRun.objects.select_related("dataset").order_by("-created_at"))
+    predictions_count = Prediction.objects.count()
+    completed_runs = [run for run in runs if run.status == "completed"]
+    active_runs = [run for run in runs if run.status == "running"]
+    audited_count = sum(1 for dataset in datasets if dataset.audit)
+    ready_count = sum(1 for dataset in datasets if dataset.status == "ready")
+    best_run = max(completed_runs, key=lambda run: run.accuracy, default=None)
+    active_model = next((run for run in completed_runs if run.is_active), None)
+    return JsonResponse({
+        "datasets": len(datasets),
+        "runs": len(runs),
+        "completed": len(completed_runs),
+        "predictions": predictions_count,
+        "audited": audited_count,
+        "ready": ready_count,
+        "best_accuracy": _percent(best_run.accuracy) if best_run else None,
+        "best_model": best_run.get_architecture_display() if best_run else "",
+        "active_model": {
+            "id": active_model.pk,
+            "label": active_model.get_architecture_display(),
+            "dataset": active_model.dataset.name if active_model.dataset else "Unassigned dataset",
+        } if active_model else None,
+        "active_runs": [
+            {
+                "id": run.pk,
+                "label": run.get_architecture_display(),
+                "dataset": run.dataset.name if run.dataset else "Unassigned dataset",
+                "progress": run.config.get("progress", {}),
+            }
+            for run in active_runs
+        ],
+        "updated_at": timezone.localtime().isoformat(),
     })
 
 

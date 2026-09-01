@@ -2,8 +2,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings
 from django.contrib import messages
+from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET
 
 from apps.datasets.models import Dataset
@@ -162,12 +163,42 @@ def training_status(request, pk):
         "error": run.config.get("error", ""),
         "execution": run.config.get("execution", ""),
         "progress": run.config.get("progress", {}),
+        "is_active": run.is_active,
     })
 
 
 def experiments(request):
     runs = TrainingRun.objects.select_related("dataset")
-    return render(request, "training/experiments.html", {"runs": runs, "page_title": "Experiments"})
+    return render(
+        request,
+        "training/experiments.html",
+        {
+            "runs": runs,
+            "active_model": runs.filter(is_active=True, status="completed").first(),
+            "page_title": "Experiments",
+        },
+    )
+
+
+def activate_model(request, pk):
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    run = get_object_or_404(TrainingRun.objects.select_related("dataset"), pk=pk)
+    if run.status != "completed" or not run.config.get("checkpoint"):
+        messages.error(request, "Only a completed run with a saved checkpoint can be used for predictions.")
+        return redirect("training:experiments")
+
+    with transaction.atomic():
+        TrainingRun.objects.filter(is_active=True).update(is_active=False)
+        run.is_active = True
+        run.save(update_fields=["is_active"])
+    messages.success(
+        request,
+        f"{run.get_architecture_display()} is now selected for new predictions.",
+    )
+    return redirect("training:experiments")
 
 
 def clear_experiments(request):

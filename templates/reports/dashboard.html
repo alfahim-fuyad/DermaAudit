@@ -6,18 +6,29 @@
     <h1>Research reports</h1>
     <p class="subhead">A live view of dataset quality, model performance, and reliability.</p>
   </div>
-  <div class="report-actions">
-    <span class="pill pill-blue">Live workspace view</span>
+   <div class="report-actions">
+     <span class="pill pill-blue report-live-strip" data-report-live data-status-url="{% url 'reports:live_status' %}"><i></i><span data-live-connection>Live workspace view</span><small data-live-updated>Auto-refreshing</small></span>
     <a class="button button-primary" href="{% url 'datasets:upload' %}">＋ Add dataset</a>
   </div>
 </section>
 
 <div class="report-kpis">
-  <div class="metric-card"><small>DATASETS</small><strong>{{ datasets|length }}</strong><span>{{ ready_count }} ready for training</span></div>
-  <div class="metric-card"><small>EXPERIMENTS</small><strong>{{ runs|length }}</strong><span>{{ completed_count }} completed successfully</span></div>
-  <div class="metric-card"><small>BEST ACCURACY</small><strong>{% if best_run %}{{ best_accuracy|floatformat:1 }}%{% else %}—{% endif %}</strong><span>{% if best_run %}{{ best_run.get_architecture_display }}{% else %}No completed model{% endif %}</span></div>
-  <div class="metric-card"><small>PREDICTIONS</small><strong>{{ predictions|length }}</strong><span>Logged classifications</span></div>
+  <div class="metric-card"><small>DATASETS</small><strong data-live-value="datasets">{{ datasets|length }}</strong><span><b data-live-value="ready">{{ ready_count }}</b> ready for training</span></div>
+  <div class="metric-card"><small>EXPERIMENTS</small><strong data-live-value="runs">{{ runs|length }}</strong><span><b data-live-value="completed">{{ completed_count }}</b> completed successfully</span></div>
+  <div class="metric-card"><small>BEST ACCURACY</small><strong data-live-value="best_accuracy">{% if best_run %}{{ best_accuracy|floatformat:1 }}%{% else %}—{% endif %}</strong><span data-live-value="best_model">{% if best_run %}{{ best_run.get_architecture_display }}{% else %}No completed model{% endif %}</span></div>
+  <div class="metric-card"><small>PREDICTIONS</small><strong data-live-value="predictions">{{ predictions|length }}</strong><span>Logged classifications</span></div>
 </div>
+
+<section class="panel report-live-monitor" data-live-monitor data-status-url="{% url 'reports:live_status' %}">
+  <div class="panel-heading"><div><p class="eyebrow">LIVE OPERATIONS</p><h3>Workspace activity</h3></div><span class="live-monitor-count" data-live-run-count>{% if active_runs %}{{ active_runs|length }} active{% else %}No active jobs{% endif %}</span></div>
+  <div class="live-run-list" data-live-run-list>
+    {% if active_runs %}
+      {% for run in active_runs %}<div class="live-run-row"><span class="live-run-pulse"></span><div><strong>{{ run.get_architecture_display }}</strong><small>{{ run.dataset.name|default:"Unassigned dataset" }}</small></div><span class="live-run-stage">{{ run.config.progress.label|default:"Training in progress" }}</span><b>{{ run.config.progress.percent|default:0 }}%</b></div>{% endfor %}
+    {% else %}
+      <div class="live-empty"><span>✓</span><div><strong>No training jobs are running</strong><small>New uploads, experiments, and predictions will appear here automatically.</small></div></div>
+    {% endif %}
+  </div>
+</section>
 
 <div class="two-col-section">
   <div class="panel">
@@ -50,6 +61,7 @@
     <div class="coverage-summary"><span>Ready datasets</span><strong>{{ readiness }}%</strong></div>
     <div class="coverage-track"><span style="width:{{ readiness }}%"></span></div>
     <p class="center-copy">{% if datasets %}{{ ready_count }} of {{ datasets|length }} datasets are ready for training.{% else %}Upload a dataset to start reliability reporting.{% endif %}</p>
+    <div class="active-model-summary"><small>ACTIVE MODEL</small>{% if active_model %}<strong>{{ active_model.get_architecture_display }}</strong><span>{{ active_model.dataset.name|default:"Unassigned dataset" }}</span>{% else %}<strong>No model selected</strong><span>Choose one from experiment history.</span>{% endif %}</div>
     <a class="button button-outline button-full" href="{% url 'datasets:list' %}">Open datasets</a>
   </div>
 </div>

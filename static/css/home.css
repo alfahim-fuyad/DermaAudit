@@ -64,6 +64,24 @@
 
  .overview-page .dataset-node.is-empty{opacity:.16;box-shadow:none;animation:none}
 
+  .overview-page .overview-live-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:15px;margin:0 5.2% 24px}
+  .overview-page .overview-live-grid .panel{margin:0}
+  .overview-page .overview-pulse-panel,.overview-page .overview-activity-panel{min-height:218px}
+  .overview-page .pulse-signals{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .overview-page .pulse-signal{display:flex;gap:9px;align-items:flex-start;padding:11px 10px;border:1px solid #edf1f3;border-radius:10px;background:#fbfdfd;min-width:0}
+  .overview-page .pulse-signal-icon{width:25px;height:25px;display:grid;place-items:center;flex:0 0 25px;border-radius:8px;font-size:12px}
+  .overview-page .pulse-blue{background:#edf4ff;color:var(--blue)}.overview-page .pulse-green{background:#e5f8ee;color:var(--green)}.overview-page .pulse-orange{background:#fff0e5;color:var(--orange)}
+  .overview-page .pulse-signal div{min-width:0}.overview-page .pulse-signal small{display:block;color:#9aa7af;font:9px "DM Mono",monospace;letter-spacing:.4px}
+  .overview-page .pulse-signal strong{display:block;margin-top:5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.overview-page .pulse-signal strong b{font-weight:700}
+  .overview-page .pulse-signal p{margin:4px 0 0;color:var(--muted);font-size:9px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .overview-page .overview-live-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;padding-top:12px;border-top:1px solid #edf1f2;color:#94a1a9;font:9px "DM Mono",monospace}
+  .overview-page .overview-live-footer>span{display:flex;align-items:center;gap:6px}.overview-page .overview-live-footer i{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px #e1f8ec}
+  .overview-page .activity-count{padding:6px 8px;border-radius:14px;background:#f5f8fa;color:#8c9aa3;font:9px "DM Mono",monospace}
+  .overview-page .overview-activity-list{margin:0 -25px}.overview-page .overview-activity-row{display:flex;align-items:center;gap:9px;min-height:43px;padding:7px 25px;border-top:1px solid #eef1f3}.overview-page .overview-activity-row>div{min-width:0}.overview-page .overview-activity-row strong,.overview-page .overview-activity-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.overview-page .overview-activity-row strong{font-size:10px}.overview-page .overview-activity-row small{margin-top:2px;color:var(--muted);font-size:9px}.overview-page .activity-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;box-shadow:0 0 0 3px rgba(47,120,238,.1)}.overview-page .activity-blue{background:var(--blue)}.overview-page .activity-green{background:var(--green);box-shadow:0 0 0 3px #e4f8ed}.overview-page .activity-orange{background:var(--orange);box-shadow:0 0 0 3px #fff0e5}
+  .overview-page .overview-activity-empty{display:flex;align-items:center;gap:9px;padding:25px;color:var(--muted);font-size:10px}.overview-page .overview-activity-empty>span{width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#e5f8ee;color:var(--green)}.overview-page .overview-activity-empty p{margin:0}
+  @media(max-width:900px) and (min-width:721px){.overview-page .pulse-signals{grid-template-columns:1fr}.overview-page .pulse-signal p{white-space:normal}}
+  @media(max-width:720px){.overview-page .overview-live-grid{grid-template-columns:1fr;margin-left:18px;margin-right:18px;gap:12px}.overview-page .overview-pulse-panel,.overview-page .overview-activity-panel{min-height:0}.overview-page .pulse-signals{grid-template-columns:1fr;gap:7px}.overview-page .pulse-signal{padding:12px}.overview-page .pulse-signal p{white-space:normal}.overview-page .overview-live-footer{align-items:flex-start;flex-direction:column;gap:9px}.overview-page .overview-activity-list{margin-left:-20px;margin-right:-20px}.overview-page .overview-activity-row{padding-left:20px;padding-right:20px;min-height:48px}}
+
  /* Expanded How it works tutorial modal */
  .overview-page .help-tutorial-card{width:min(690px,100%);max-height:88vh;overflow-y:auto;padding:30px 32px}
  .overview-page .help-modal-intro{max-width:570px}

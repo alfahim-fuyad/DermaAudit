@@ -104,6 +104,69 @@
    };
    if (radarEndpoint) window.setInterval(refreshRadar, 15000);
 
+    const overviewEndpoint = page.dataset.overviewEndpoint;
+    const overviewValueNodes = (key) => page.querySelectorAll(`[data-overview-value="${key}"]`);
+    const setOverviewValue = (key, value) => overviewValueNodes(key).forEach((node) => { node.textContent = value; });
+    const setOverviewStyle = (key, value) => page.querySelectorAll(`[data-overview-style="${key}"]`).forEach((node) => { node.style.width = `${Math.max(0, Math.min(100, Number(value) || 0))}%`; });
+    const renderOverviewActivity = (state) => {
+      const list = page.querySelector("[data-overview-activity-list]");
+      const count = page.querySelector("[data-overview-activity-count]");
+      if (!list || !count) return;
+      count.textContent = `${state.activity.length} recent event${state.activity.length === 1 ? "" : "s"}`;
+      list.replaceChildren();
+      if (!state.activity.length) {
+        const empty = document.createElement("div");
+        empty.className = "overview-activity-empty";
+        empty.innerHTML = "<span>✓</span><p>Your latest workspace actions will appear here automatically.</p>";
+        list.append(empty);
+        return;
+      }
+      const colors = { Dataset: "activity-green", Training: "activity-blue", Prediction: "activity-orange" };
+      state.activity.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "overview-activity-row";
+        const dot = document.createElement("span");
+        dot.className = `activity-dot ${colors[item.kind] || "activity-blue"}`;
+        const detail = document.createElement("div");
+        const title = document.createElement("strong");
+        title.textContent = item.title;
+        const meta = document.createElement("small");
+        meta.textContent = `${item.kind} · ${item.detail}`;
+        detail.append(title, meta);
+        row.append(dot, detail);
+        list.append(row);
+      });
+    };
+    const refreshOverview = async () => {
+      if (!overviewEndpoint) return;
+      try {
+        const response = await fetch(overviewEndpoint, { headers: { "X-Requested-With": "XMLHttpRequest" }, cache: "no-store" });
+        if (!response.ok) throw new Error("Overview status unavailable");
+        const state = await response.json();
+        ["dataset_count", "ready_dataset_count", "training_count", "active_training_count", "prediction_count", "workspace_health", "workspace_health_detail"].forEach((key) => setOverviewValue(key, state[key]));
+        setOverviewStyle("training_completion", state.training_completion);
+        setOverviewStyle("prediction_activity", state.prediction_activity);
+        const activeLabel = page.querySelector("[data-overview-active-label]");
+        const activeDetail = page.querySelector("[data-overview-active-detail]");
+        if (activeLabel) activeLabel.textContent = state.active_training_count ? `${state.active_training_count} job${state.active_training_count === 1 ? "" : "s"} running` : "No active jobs";
+        if (activeDetail) activeDetail.textContent = state.active_runs[0] ? `${state.active_runs[0].label} · ${state.active_runs[0].stage}` : "Start an experiment when your dataset is ready.";
+        const predictionLabel = page.querySelector("[data-overview-prediction-label]");
+        const predictionDetail = page.querySelector("[data-overview-prediction-detail]");
+        if (predictionLabel) predictionLabel.textContent = state.latest_prediction?.label || "No prediction yet";
+        if (predictionDetail) predictionDetail.textContent = state.latest_prediction ? `${state.latest_prediction.confidence}% confidence · review recommended` : "Upload an image to create the first record.";
+        const liveLabel = page.querySelector("[data-overview-live-label]");
+        if (liveLabel) liveLabel.textContent = state.active_training_count ? `${state.active_training_count} job${state.active_training_count === 1 ? "" : "s"} live` : "Updating live";
+        const updated = page.querySelector("[data-overview-updated]");
+        if (updated) updated.textContent = `Updated ${new Date(state.updated_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+        renderOverviewActivity(state);
+      } catch (_error) {
+        const liveLabel = page.querySelector("[data-overview-live-label]");
+        if (liveLabel) liveLabel.textContent = "Live updates paused";
+      }
+    };
+    refreshOverview();
+    if (overviewEndpoint) window.setInterval(refreshOverview, 8000);
+
   const helpSteps = [...page.querySelectorAll(".help-step")];
   const helpNext = document.querySelector("#helpNext");
   const helpBack = document.querySelector("#helpBack");

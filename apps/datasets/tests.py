@@ -84,6 +84,20 @@ class DatasetValidatorTests(SimpleTestCase):
         self.assertEqual(report["class_counts"], {"cats": 1, "dogs": 1})
         self.assertEqual(report["metadata"]["matched_images"], 2)
 
+    def test_images_folder_with_metadata_labels_uses_manifest_classes(self):
+        report = validate_upload(_zip_file([
+            ("images/one.bmp", _image_bytes()),
+            ("images/two.tiff", _image_bytes("black")),
+            (
+                "labels.csv",
+                b"filename,label\nimages/one.bmp,cats\nimages/two.tiff,dogs\n",
+            ),
+        ]))
+
+        self.assertTrue(report["valid"])
+        self.assertEqual(report["classes"], ["cats", "dogs"])
+        self.assertEqual(report["class_counts"], {"cats": 1, "dogs": 1})
+
     def test_non_zip_upload_is_rejected(self):
         report = validate_upload(SimpleUploadedFile("dataset.tar", b"archive"))
 

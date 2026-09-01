@@ -121,6 +121,29 @@ class OverviewRadarTests(TestCase):
         self.assertEqual(response.json()["domains"]["health"]["dataset_count"], 1)
         self.assertEqual(response.json()["domains"]["health"]["sample_count"], 5)
 
+    def test_overview_status_returns_live_workspace_signals(self):
+        dataset = Dataset.objects.create(
+            name="Ready skin set",
+            status="ready",
+            sample_count=18,
+            classes=["benign", "malignant"],
+        )
+        TrainingRun.objects.create(
+            dataset=dataset,
+            architecture="efficientnet_b0",
+            status="running",
+            config={"progress": {"percent": 42, "label": "Training the model"}},
+        )
+
+        response = self.client.get(reverse("accounts:overview_status"))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["ready_dataset_count"], 1)
+        self.assertEqual(payload["active_training_count"], 1)
+        self.assertEqual(payload["active_runs"][0]["percent"], 42)
+        self.assertEqual(payload["activity"][0]["kind"], "Training")
+
     def test_model_registry_shows_live_completed_checkpoint_data(self):
         dataset = Dataset.objects.create(name="Animals benchmark", status="ready")
         with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):

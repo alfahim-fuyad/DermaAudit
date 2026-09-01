@@ -24,6 +24,10 @@ MAX_FILES = 10000
 MAX_IMAGE_BYTES = 50 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
 MIN_IMAGE_DIMENSION = 32
+GENERIC_LABEL_FOLDERS = {
+    "data", "dataset", "files", "image", "images", "photo", "photos",
+    "pictures", "test", "train", "training", "val", "valid", "validation",
+}
 
 
 def _label_for_member(name):
@@ -106,12 +110,21 @@ def validate_upload(upload):
                 if path.suffix.lower() not in IMAGE_EXTENSIONS:
                     continue
                 report["sample_count"] += 1
-                label = _label_for_member(info.filename)
-                if not label:
-                    label = next(
-                        (metadata_labels[key] for key in _record_keys(info.filename) if key in metadata_labels),
-                        "",
+                folder_label = _label_for_member(info.filename)
+                metadata_label = next(
+                    (metadata_labels[key] for key in _record_keys(info.filename) if key in metadata_labels),
+                    "",
+                )
+                # A generic container such as images/ or train/ is not a
+                # reliable class label when a manifest provides the label.
+                label = (
+                    metadata_label
+                    if metadata_label and (
+                        not folder_label
+                        or folder_label.casefold() in GENERIC_LABEL_FOLDERS
                     )
+                    else folder_label
+                )
                 if not label:
                     report["warnings"].append(
                         f"Image is not inside a class folder: {info.filename}"

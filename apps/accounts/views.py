@@ -38,10 +38,27 @@ def home(request):
             "epochs": config.get("epochs", "—"),
             "image_size": preprocessing.get("image_size", "—"),
         }
+    datasets = list(Dataset.objects.all().order_by("-updated_at"))
+    training_runs = list(TrainingRun.objects.select_related("dataset").order_by("-created_at"))
+    predictions = list(Prediction.objects.all().order_by("-created_at"))
+    completed_runs = [run for run in training_runs if run.status == "completed"]
+    active_runs = [run for run in training_runs if run.status == "running"]
+    failed_runs = [run for run in training_runs if run.status == "failed"]
     context = {
         "dataset_count": Dataset.objects.count(),
         "prediction_count": Prediction.objects.count(),
         "training_count": TrainingRun.objects.count(),
+        "ready_dataset_count": sum(1 for dataset in datasets if dataset.status == "ready"),
+        "active_training_count": len(active_runs),
+        "training_completion": round(len(completed_runs) / len(training_runs) * 100) if training_runs else 0,
+        "prediction_activity": min(100, Prediction.objects.count() * 10),
+        "workspace_health": "Review needed" if failed_runs else "Ready",
+        "workspace_health_detail": (
+            f"{len(failed_runs)} training run{'s' if len(failed_runs) != 1 else ''} need attention"
+            if failed_runs else "All systems operational"
+        ),
+        "active_training_runs": active_runs,
+        "latest_prediction": predictions[0] if predictions else None,
         "radar_data": radar_data,
         "active_model": active_model,
         "model_registry": model_registry,
@@ -55,6 +72,79 @@ def home(request):
 def radar_status(request):
     """Return fresh dataset coverage for the live overview radar."""
     return JsonResponse(build_radar_data(Dataset.objects.all()))
+
+
+def overview_status(request):
+    """Return live workspace signals for the Overview pulse and activity feed."""
+    datasets = list(Dataset.objects.all().order_by("-updated_at"))
+    training_runs = list(TrainingRun.objects.select_related("dataset").order_by("-created_at"))
+    predictions = list(Prediction.objects.all().order_by("-created_at"))
+    completed_runs = [run for run in training_runs if run.status == "completed"]
+    active_runs = [run for run in training_runs if run.status == "running"]
+    failed_runs = [run for run in training_runs if run.status == "failed"]
+
+    events = []
+    for dataset in datasets:
+        events.append({
+            "kind": "Dataset",
+            "title": dataset.name,
+            "detail": f"{dataset.sample_count or 0:,} images · {dataset.get_status_display()}",
+            "created_at": dataset.updated_at,
+        })
+    for run in training_runs:
+        events.append({
+            "kind": "Training",
+            "title": run.get_architecture_display(),
+            "detail": f"{run.dataset.name if run.dataset else 'Unassigned dataset'} · {run.get_status_display()}",
+            "created_at": run.created_at,
+        })
+    for prediction in predictions:
+        events.append({
+            "kind": "Prediction",
+            "title": prediction.predicted_class,
+            "detail": f"{round(float(prediction.confidence or 0) * 100, 1)}% confidence",
+            "created_at": prediction.created_at,
+        })
+    events.sort(key=lambda event: event["created_at"], reverse=True)
+
+    return JsonResponse({
+        "dataset_count": len(datasets),
+        "ready_dataset_count": sum(1 for dataset in datasets if dataset.status == "ready"),
+        "training_count": len(training_runs),
+        "completed_training_count": len(completed_runs),
+        "active_training_count": len(active_runs),
+        "prediction_count": len(predictions),
+        "training_completion": round(len(completed_runs) / len(training_runs) * 100) if training_runs else 0,
+        "prediction_activity": min(100, len(predictions) * 10),
+        "workspace_health": "Review needed" if failed_runs else "Ready",
+        "workspace_health_detail": (
+            f"{len(failed_runs)} training run{'s' if len(failed_runs) != 1 else ''} need attention"
+            if failed_runs else "All systems operational"
+        ),
+        "active_runs": [
+            {
+                "label": run.get_architecture_display(),
+                "dataset": run.dataset.name if run.dataset else "Unassigned dataset",
+                "percent": run.config.get("progress", {}).get("percent", 0),
+                "stage": run.config.get("progress", {}).get("label", "Training in progress"),
+            }
+            for run in active_runs
+        ],
+        "latest_prediction": {
+            "label": predictions[0].predicted_class,
+            "confidence": round(float(predictions[0].confidence or 0) * 100, 1),
+        } if predictions else None,
+        "activity": [
+            {
+                "kind": event["kind"],
+                "title": event["title"],
+                "detail": event["detail"],
+                "when": timezone.localtime(event["created_at"]).isoformat(),
+            }
+            for event in events[:5]
+        ],
+        "updated_at": timezone.localtime().isoformat(),
+    })
 
 
 def login_view(request):

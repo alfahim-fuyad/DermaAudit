@@ -79,3 +79,17 @@ class ReportsDashboardTests(TestCase):
         self.assertEqual(self.client.get(reverse("training:clear_experiments")).status_code, 405)
         self.assertEqual(self.client.get(reverse("prediction:clear_history")).status_code, 405)
         self.assertEqual(self.client.get(reverse("reports:clear_all")).status_code, 405)
+
+    def test_live_status_returns_current_workspace_summary(self):
+        Dataset.objects.create(name="Ready dataset", status="ready")
+        TrainingRun.objects.create(
+            architecture="efficientnet_b0",
+            status="running",
+            config={"progress": {"percent": 42, "label": "Training the model"}},
+        )
+
+        response = self.client.get(reverse("reports:live_status"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["datasets"], 1)
+        self.assertEqual(response.json()["active_runs"][0]["progress"]["percent"], 42)

@@ -2,7 +2,7 @@
 {% load static %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
 {% block content %}
-<div class="overview-page" data-radar-endpoint="{% url 'accounts:radar_status' %}">
+<div class="overview-page" data-radar-endpoint="{% url 'accounts:radar_status' %}" data-overview-endpoint="{% url 'accounts:overview_status' %}">
 <section class="page-intro">
   <div><p class="eyebrow">{{ current_time|date:"l, F j, Y"|upper }}</p><h1>{{ greeting }}{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}.</h1><p class="subhead">Your research workspace at a glance.</p></div>
   <div class="overview-actions"><button class="button button-help" type="button" id="helpOpen" aria-haspopup="dialog" aria-controls="helpModal"><span>?</span> How it works</button><a class="button button-primary" href="{% url 'prediction:predict' %}"><span>＋</span> New prediction</a></div>
@@ -32,10 +32,29 @@
   </div>
 </section>
 <section class="stats-grid">
-  <div class="stat-card"><div class="stat-top"><span class="stat-icon blue">▦</span><span class="trend">Workspace</span></div><strong>{{ dataset_count }}</strong><span class="stat-label">Datasets tracked</span><div class="mini-bars"><i style="height:34%"></i><i style="height:56%"></i><i style="height:45%"></i><i style="height:72%"></i><i style="height:64%"></i><i style="height:82%"></i><i style="height:76%"></i></div></div>
-  <div class="stat-card"><div class="stat-top"><span class="stat-icon violet">◈</span><span class="trend">Registry</span></div><strong>{{ training_count }}</strong><span class="stat-label">Training runs</span><div class="stat-progress"><span style="width:64%"></span></div><small>Benchmark history</small></div>
-  <div class="stat-card"><div class="stat-top"><span class="stat-icon green">⊙</span><span class="trend">Privacy-first</span></div><strong>{{ prediction_count }}</strong><span class="stat-label">Predictions logged</span><div class="stat-progress green-progress"><span style="width:28%"></span></div><small>Minimal metadata only</small></div>
-  <div class="stat-card"><div class="stat-top"><span class="stat-icon orange">✓</span><span class="trend">Status</span></div><strong class="stat-word">Ready</strong><span class="stat-label">Workspace health</span><div class="health-line"><span></span><span></span><span></span><span></span><span></span></div><small>All systems operational</small></div>
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon blue">▦</span><span class="trend">Workspace</span></div><strong data-overview-value="dataset_count">{{ dataset_count }}</strong><span class="stat-label">Datasets tracked</span><div class="mini-bars"><i style="height:34%"></i><i style="height:56%"></i><i style="height:45%"></i><i style="height:72%"></i><i style="height:64%"></i><i style="height:82%"></i><i style="height:76%"></i></div><small><b data-overview-value="ready_dataset_count">{{ ready_dataset_count }}</b> ready for training</small></div>
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon violet">◈</span><span class="trend">Registry</span></div><strong data-overview-value="training_count">{{ training_count }}</strong><span class="stat-label">Training runs</span><div class="stat-progress"><span data-overview-style="training_completion" style="width:{{ training_completion }}%"></span></div><small><b data-overview-value="active_training_count">{{ active_training_count }}</b> active now</small></div>
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon green">⊙</span><span class="trend">Privacy-first</span></div><strong data-overview-value="prediction_count">{{ prediction_count }}</strong><span class="stat-label">Predictions logged</span><div class="stat-progress green-progress"><span data-overview-style="prediction_activity" style="width:{{ prediction_activity }}%"></span></div><small>Minimal metadata only</small></div>
+  <div class="stat-card"><div class="stat-top"><span class="stat-icon orange">✓</span><span class="trend">Status</span></div><strong class="stat-word" data-overview-value="workspace_health">{{ workspace_health }}</strong><span class="stat-label">Workspace health</span><div class="health-line"><span></span><span></span><span></span><span></span><span></span></div><small data-overview-value="workspace_health_detail">{{ workspace_health_detail }}</small></div>
+</section>
+<section class="overview-live-grid" data-overview-live>
+  <div class="panel overview-pulse-panel">
+    <div class="panel-heading"><div><p class="eyebrow">LIVE WORKSPACE PULSE</p><h3>What needs your attention</h3></div><span class="live-badge"><i></i><span data-overview-live-label>Updating live</span></span></div>
+    <div class="pulse-signals">
+      <div class="pulse-signal"><span class="pulse-signal-icon pulse-blue">◈</span><div><small>ACTIVE TRAINING</small><strong data-overview-active-label>{% if active_training_runs %}{{ active_training_runs|length }} job{{ active_training_runs|length|pluralize }} running{% else %}No active jobs{% endif %}</strong><p data-overview-active-detail>{% if active_training_runs %}{{ active_training_runs.0.get_architecture_display }} · {{ active_training_runs.0.config.progress.label|default:"Preparing" }}{% else %}Start an experiment when your dataset is ready.{% endif %}</p></div></div>
+      <div class="pulse-signal"><span class="pulse-signal-icon pulse-green">✓</span><div><small>DATASET READINESS</small><strong><b data-overview-value="ready_dataset_count">{{ ready_dataset_count }}</b> ready to train</strong><p>Audited datasets can move into model comparison.</p></div></div>
+      <div class="pulse-signal"><span class="pulse-signal-icon pulse-orange">⊙</span><div><small>LATEST PREDICTION</small><strong data-overview-prediction-label>{% if latest_prediction %}{{ latest_prediction.predicted_class }}{% else %}No prediction yet{% endif %}</strong><p data-overview-prediction-detail>{% if latest_prediction %}{{ latest_prediction.confidence|floatformat:1 }}% confidence · review recommended{% else %}Upload an image to create the first record.{% endif %}</p></div></div>
+    </div>
+    <div class="overview-live-footer"><span><i></i> <span data-overview-updated>Synced just now</span></span><a class="text-link small" href="{% url 'reports:dashboard' %}">Open live reports →</a></div>
+  </div>
+  <div class="panel overview-activity-panel">
+    <div class="panel-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h3>Workspace timeline</h3></div><span class="activity-count" data-overview-activity-count>{{ dataset_count|add:training_count|add:prediction_count }} events</span></div>
+    <div class="overview-activity-list" data-overview-activity-list>
+      {% if latest_prediction %}<div class="overview-activity-row"><span class="activity-dot activity-orange"></span><div><strong>{{ latest_prediction.predicted_class }}</strong><small>Prediction · {{ latest_prediction.created_at|timesince }} ago</small></div></div>{% endif %}
+      {% for run in active_training_runs|slice:":2" %}<div class="overview-activity-row"><span class="activity-dot activity-blue"></span><div><strong>{{ run.get_architecture_display }}</strong><small>Training · {{ run.config.progress.label|default:"In progress" }}</small></div></div>{% endfor %}
+      {% if not latest_prediction and not active_training_runs %}<div class="overview-activity-empty"><span>✓</span><p>Your latest workspace actions will appear here automatically.</p></div>{% endif %}
+    </div>
+  </div>
 </section>
 <section class="overview-insights">
   <div class="panel dataset-radar-panel">

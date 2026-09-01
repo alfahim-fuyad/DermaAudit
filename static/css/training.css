@@ -32,6 +32,20 @@
 .training-history-link b{width:20px;height:20px;display:grid;place-items:center;border-radius:6px;background:#f0f5fa;color:var(--blue);font-size:14px;line-height:1;transition:.2s}
 .training-history-link:hover{border-color:#a9c8f5;background:#fbfdff;color:var(--blue);transform:translateY(-1px);box-shadow:0 5px 14px rgba(47,120,238,.08)}
 .training-history-link:hover b{background:var(--blue-soft);transform:translate(1px,-1px)}
+.nav-link-logout{color:#bd6b5d}
+.nav-link-logout:hover{background:#fff5f2;color:#a94d3d}
+.selected-model-banner{display:flex;align-items:center;gap:13px;margin:0 5.2% 20px;padding:15px 18px;background:#f1fbf6;border-color:#d8f0e5;box-shadow:none}
+.selected-model-banner>div{flex:1;min-width:0}
+.selected-model-banner .eyebrow{margin:0 0 3px;color:#70a18a}
+.selected-model-banner strong,.selected-model-banner small{display:block}
+.selected-model-banner strong{font-size:12px}
+.selected-model-banner small{margin-top:3px;color:#6b8377;font-size:10px}
+.selected-model-icon{width:28px;height:28px;display:grid;place-items:center;flex:0 0 28px;border-radius:9px;background:#d9f6e7;color:var(--green);font-weight:800}
+.selected-model-banner-muted{background:#f8fafb;border-color:#e5ebef}
+.selected-model-banner-muted .selected-model-icon{background:#edf2f5;color:#7e919e}
+.active-model-badge{display:inline-flex;padding:6px 9px;border-radius:20px;background:#e5f8ee;color:#218c5d;font:500 9px "DM Mono",monospace}
+.activate-model-button{padding:7px 9px;font-size:10px;white-space:nowrap}
+.experiment-date{display:block;margin-top:3px;color:#a0abb3;font-size:9px}
 .training-layout{grid-template-columns:minmax(0,1.08fr) minmax(310px,.92fr);gap:18px;align-items:stretch}
 .training-form,.architecture-panel{padding:27px 28px}
 .training-heading{align-items:center;margin-bottom:18px}

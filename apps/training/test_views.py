@@ -66,3 +66,37 @@ class TrainingConfigurationViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Epochs must be between 1 and 200")
         self.assertFalse(dataset.training_runs.exists())
+
+    def test_completed_run_can_be_selected_for_predictions(self):
+        first = TrainingRun.objects.create(
+            architecture="efficientnet_b0",
+            status="completed",
+            config={"checkpoint": "checkpoints/first.pt"},
+            is_active=True,
+        )
+        second = TrainingRun.objects.create(
+            architecture="mobilenet_v3",
+            status="completed",
+            config={"checkpoint": "checkpoints/second.pt"},
+        )
+
+        response = self.client.post(reverse("training:activate_model", args=[second.pk]))
+
+        self.assertRedirects(response, reverse("training:experiments"))
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertFalse(first.is_active)
+        self.assertTrue(second.is_active)
+
+    def test_incomplete_run_cannot_be_selected_for_predictions(self):
+        run = TrainingRun.objects.create(
+            architecture="efficientnet_b0",
+            status="running",
+            config={},
+        )
+
+        response = self.client.post(reverse("training:activate_model", args=[run.pk]))
+
+        self.assertRedirects(response, reverse("training:experiments"))
+        run.refresh_from_db()
+        self.assertFalse(run.is_active)

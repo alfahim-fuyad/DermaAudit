@@ -10,10 +10,13 @@ from apps.training.services.trainer import _build_model, _image_tensor
 
 def _latest_checkpoint():
     media_root = Path(settings.MEDIA_ROOT).resolve()
-    for run in TrainingRun.objects.filter(
+    completed_runs = TrainingRun.objects.filter(
         status="completed",
         config__checkpoint__isnull=False,
-    ).select_related("dataset").order_by("-created_at"):
+    ).select_related("dataset")
+    active_runs = completed_runs.filter(is_active=True).order_by("-created_at")
+    runs = list(active_runs) + list(completed_runs.exclude(is_active=True).order_by("-created_at"))
+    for run in runs:
         checkpoint_name = run.config.get("checkpoint")
         if not checkpoint_name:
             continue

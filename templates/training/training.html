@@ -74,7 +74,7 @@
         </select>
       </label>
       <label class="training-field">
-        <span>Architecture <small>Model family</small></span>
+        <span>Architecture <small>Choose what to save</small></span>
         <select name="architecture">
           <option value="efficientnet_b0">EfficientNet-B0 · balanced</option>
           <option value="resnet50">ResNet-50 · high capacity</option>
@@ -111,14 +111,14 @@
         Training is starting. This page will update when the run finishes.
       </p>
     </form>
-    <p class="form-note"><span class="note-dot">i</span> Training runs on CPU with a fast deterministic image classifier and saves a checkpoint for this experiment. MobileNetV3 is the quickest architecture for a first run.</p>
+     <p class="form-note"><span class="note-dot">i</span> Every completed experiment saves its own checkpoint. After comparing results, choose exactly which saved model to use for new predictions from Experiment history.</p>
   </div>
 
   <div class="panel architecture-panel">
     <div class="panel-heading training-heading">
       <div>
-        <p class="eyebrow">SUPPORTED ARCHITECTURES</p>
-        <h3>Choose the right trade-off</h3>
+      <p class="eyebrow">SUPPORTED ARCHITECTURES</p>
+      <h3>Choose what fits your use case</h3>
       </div>
       <span class="architecture-count">03</span>
     </div>
@@ -141,7 +141,7 @@
     </div>
     <div class="architecture-footer">
       <span class="status-dot"></span>
-      <p><strong>All options use the same split.</strong><small>Compare like with like across experiments.</small></p>
+       <p><strong>All options save a separate checkpoint.</strong><small>Compare results, then activate the best fit for predictions.</small></p>
     </div>
   </div>
 </div>
