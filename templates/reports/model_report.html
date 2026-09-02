@@ -5,14 +5,60 @@
   <a class="button button-outline" href="{% url 'reports:dashboard' %}">← All reports</a>
 </section>
 <div class="panel">
-  <div class="panel-heading"><div><p class="eyebrow">BENCHMARK RESULTS</p><h3>{{ run.get_architecture_display|default:"Model comparison" }}</h3></div><span class="pill pill-blue">{{ run.get_status_display|default:"Preview" }}</span></div>
+  <div class="panel-heading"><div><p class="eyebrow">BENCHMARK RESULTS</p><h3>{{ run.get_architecture_display|default:"Model comparison" }}</h3><p class="panel-copy">{{ run.dataset.name|default:"Unassigned dataset" }} · controlled, held-out evaluation</p></div><span class="pill pill-blue">{{ run.get_status_display|default:"Preview" }}</span></div>
   <table class="report-table">
     <thead><tr><th>Measure</th><th>Result</th><th>Interpretation</th></tr></thead>
     <tbody>
-      <tr><td>Accuracy</td><td>{{ run.accuracy|floatformat:3|default:"—" }}</td><td>Overall correct predictions</td></tr>
-      <tr><td>Macro-F1</td><td>{{ run.macro_f1|floatformat:3|default:"—" }}</td><td>Balanced class performance</td></tr>
+      <tr><td>Accuracy</td><td>{{ evaluation.accuracy|floatformat:3|default:run.accuracy|floatformat:3 }}</td><td>Overall correct predictions</td></tr>
+      <tr><td>Macro-F1</td><td>{{ evaluation.macro_f1|floatformat:3|default:run.macro_f1|floatformat:3 }}</td><td>Balanced class performance</td></tr>
+      <tr><td>Balanced accuracy</td><td>{{ evaluation.balanced_accuracy|floatformat:3|default:"—" }}</td><td>Accounts for class imbalance</td></tr>
+      <tr><td>Macro precision / recall</td><td>{{ evaluation.precision|floatformat:3|default:"—" }} / {{ evaluation.recall|floatformat:3|default:"—" }}</td><td>Class-averaged error signals</td></tr>
+      <tr><td>AUROC</td><td>{{ evaluation.auroc|floatformat:3|default:"—" }}</td><td>One-vs-rest ranking quality when available</td></tr>
+      <tr><td>Evaluation split</td><td>{{ run.config.evaluation_split|default:"held-out test" }}</td><td>Never mixed with training augmentation</td></tr>
       <tr><td>Evaluation device</td><td>{{ run.config.device|default:"CPU preview" }}</td><td>Reproducibility context</td></tr>
     </tbody>
   </table>
+</div>
+<div class="two-col-section">
+  <div class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">SPLIT & INTERVENTION</p><h3>Reproducibility record</h3></div></div>
+    <div class="profile-list">
+      <p><span>Strategy</span><strong>{{ split_plan.strategy|default:"—" }}</strong></p>
+      <p><span>Ratios</span><strong>{{ split_plan.ratios|join:" / "|default:"—" }}</strong></p>
+      <p><span>Train / validation / test</span><strong>{{ split_plan.counts.train|default:"0" }} / {{ split_plan.counts.validation|default:"0" }} / {{ split_plan.counts.test|default:"0" }}</strong></p>
+      <p><span>Dataset intervention</span><strong>{{ intervention.variant|default:"original"|title }}</strong></p>
+      <p><span>Samples excluded</span><strong>{{ intervention.excluded_records|default:"0" }}</strong></p>
+      <p><span>Class-weighted loss</span><strong>{% if intervention.class_weighted_loss %}Enabled{% else %}Not enabled{% endif %}</strong></p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">RELIABILITY</p><h3>Calibration & fairness</h3></div></div>
+    <div class="profile-list">
+      <p><span>Temperature</span><strong>{{ run.config.temperature|default:"1.0" }}</strong></p>
+      <p><span>Expected calibration error</span><strong>{{ calibration.ece|floatformat:3|default:"Not available" }}</strong></p>
+      <p><span>Brier score</span><strong>{{ calibration.brier|floatformat:3|default:"Not available" }}</strong></p>
+      <p><span>Fairness evidence</span><strong>{{ fairness.status|default:"Not available"|title }}</strong></p>
+      <p><span>Statistical evidence</span><strong>{{ statistics.status|default:"Not available"|title }}</strong></p>
+      <p><span>Best epoch</span><strong>{{ run.config.best_epoch|default:"—" }}</strong></p>
+    </div>
+  </div>
+</div>
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">PER-CLASS EVALUATION</p><h3>Precision, recall, and F1</h3></div></div>
+  {% if evaluation.per_class %}
+    <div class="data-table">
+      <div class="table-row table-head"><span>Class</span><span>Precision</span><span>Recall</span><span>F1</span></div>
+      {% for item in evaluation.per_class %}<div class="table-row"><span><strong>{{ item.label }}</strong></span><span>{{ item.precision|floatformat:3 }}</span><span>{{ item.recall|floatformat:3 }}</span><span>{{ item.f1|floatformat:3 }}</span></div>{% endfor %}
+    </div>
+  {% else %}<p class="empty-inline">Per-class results will appear after a completed run.</p>{% endif %}
+</div>
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">TRAINING CURVE</p><h3>Epoch evidence</h3></div><span class="pill pill-mint">{% if run.config.early_stopping.stopped_early %}Stopped early{% else %}Completed{% endif %}</span></div>
+  {% if epoch_history %}
+    <div class="data-table">
+      <div class="table-row table-head"><span>Epoch</span><span>Train loss</span><span>Train F1</span><span>Validation F1</span><span>Learning rate</span></div>
+      {% for epoch in epoch_history %}<div class="table-row"><span>{{ epoch.epoch }}</span><span>{{ epoch.train_loss|floatformat:4 }}</span><span>{{ epoch.train_f1|floatformat:3 }}</span><span>{{ epoch.validation_f1|floatformat:3 }}</span><span>{{ epoch.learning_rate }}</span></div>{% endfor %}
+    </div>
+  {% else %}<p class="empty-inline">Training history will appear after a completed run.</p>{% endif %}
 </div>
 {% endblock %}

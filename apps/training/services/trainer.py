@@ -2,6 +2,7 @@
 import io
 import os
 import random
+from copy import deepcopy
 import zipfile
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from apps.datasets.services.validator import validate_upload
 from apps.reports.services.calibration import build_calibration_report
 from apps.reports.services.fairness import build_fairness_report
 from apps.reports.services.statistics import build_run_statistics
-from .experiments import build_experiment_plan
+from .experiments import build_experiment_plan, prepare_records
 
 
 IMAGE_SIZE = 64
@@ -408,9 +409,15 @@ def run_training(run, progress_callback=None):
     if epochs < 1:
         raise ValueError("Epochs must be at least 1.")
 
-    split_function = _group_split_records if any(record.get("group_id") for record in report["records"]) else _split_records
-    train_records, validation_records, test_records = split_function(report["records"], split)
-    group_aware = split_function is _group_split_records
+    experiment_variant = run.config.get("experiment_variant", "original")
+    experiment_records = prepare_records(report["records"], experiment_variant)
+    if len({record.get("label") for record in experiment_records}) < 2:
+        raise ValueError(
+            f"The {experiment_variant.replace('_', ' ')} intervention leaves fewer than two classes."
+        )
+    group_aware = any(record.get("group_id") for record in experiment_records)
+    split_function = _group_split_records if group_aware else _split_records
+    train_records, validation_records, test_records = split_function(experiment_records, split)
     split_plan = _split_plan(
         train_records,
         validation_records,
@@ -460,13 +467,25 @@ def run_training(run, progress_callback=None):
 
     model = _build_model(torch, nn, run.architecture, len(classes), model_version=3)
     class_counts = [sum(1 for _, label in train_samples if label == class_name) for class_name in classes]
-    weights = torch.tensor(
-        [len(train_samples) / max(1, len(classes) * count) for count in class_counts],
-        dtype=torch.float32,
-    )
+    imbalance_handled = experiment_variant in {"imbalance_handled", "fully_audited"}
+    weights = None
+    if imbalance_handled:
+        weights = torch.tensor(
+            [len(train_samples) / max(1, len(classes) * count) for count in class_counts],
+            dtype=torch.float32,
+        )
     loss_function = nn.CrossEntropyLoss(weight=weights)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.0001)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="max", factor=0.5, patience=1
+    )
     epoch_losses = []
+    epoch_history = []
+    best_state = None
+    best_validation_f1 = -1.0
+    best_epoch = 0
+    epochs_without_improvement = 0
+    early_stopping_patience = min(5, max(2, epochs // 3))
 
     _report_progress(
         progress_callback,
@@ -475,8 +494,8 @@ def run_training(run, progress_callback=None):
         "Training the model",
         f"Running {epochs} epoch{'s' if epochs != 1 else ''} on the CPU.",
     )
-    model.train()
     for epoch in range(epochs):
+        model.train()
         total_loss, batch_count = 0.0, 0
         for images, targets in train_loader:
             optimizer.zero_grad()
@@ -486,13 +505,41 @@ def run_training(run, progress_callback=None):
             total_loss += loss.item()
             batch_count += 1
         epoch_losses.append(round(total_loss / max(1, batch_count), 5))
+        train_metrics = _evaluate(torch, model, train_loader, classes, len(classes))
+        validation_metrics = (
+            _evaluate(torch, model, validation_loader, classes, len(classes))
+            if validation_loader else train_metrics
+        )
+        validation_f1 = validation_metrics["macro_f1"]
+        scheduler.step(validation_f1)
+        epoch_history.append({
+            "epoch": epoch + 1,
+            "train_loss": epoch_losses[-1],
+            "train_f1": train_metrics["macro_f1"],
+            "validation_loss": None,
+            "validation_f1": validation_f1,
+            "learning_rate": round(float(optimizer.param_groups[0]["lr"]), 7),
+        })
+        if validation_f1 > best_validation_f1:
+            best_validation_f1 = validation_f1
+            best_epoch = epoch + 1
+            best_state = deepcopy(model.state_dict())
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
         _report_progress(
             progress_callback,
             "train",
             34 + round(45 * (epoch + 1) / epochs),
             "Training the model",
-            f"Epoch {epoch + 1} of {epochs} complete · loss {epoch_losses[-1]:.4f}.",
+            f"Epoch {epoch + 1} of {epochs} complete · validation Macro-F1 "
+            f"{validation_f1:.3f}.",
         )
+        if epochs_without_improvement >= early_stopping_patience:
+            break
+
+    if best_state is not None:
+        model.load_state_dict(best_state)
 
     _report_progress(
         progress_callback,
@@ -529,7 +576,6 @@ def run_training(run, progress_callback=None):
     training_distribution = {
         label: count for label, count in zip(classes, class_counts)
     }
-    experiment_variant = run.config.get("experiment_variant", "original")
     experiment_plan = build_experiment_plan(experiment_variant)
 
     _report_progress(
@@ -604,6 +650,14 @@ def run_training(run, progress_callback=None):
         },
         "statistics": statistics,
         "training_distribution": training_distribution,
+        "intervention": {
+            "variant": experiment_variant,
+            "records_before": len(report["records"]),
+            "records_after": len(experiment_records),
+            "excluded_records": len(report["records"]) - len(experiment_records),
+            "class_weighted_loss": imbalance_handled,
+            "augmentation": "horizontal_flip_training_only",
+        },
         "split_plan": split_plan,
         "experiment_variant": experiment_variant,
         "experiment_plan": experiment_plan,
@@ -619,4 +673,10 @@ def run_training(run, progress_callback=None):
         "checkpoint": str(checkpoint_path.relative_to(settings.MEDIA_ROOT)),
         "final_loss": epoch_losses[-1],
         "loss_history": epoch_losses,
+        "epoch_history": epoch_history,
+        "best_epoch": best_epoch,
+        "early_stopping": {
+            "patience": early_stopping_patience,
+            "stopped_early": len(epoch_losses) < epochs,
+        },
     }

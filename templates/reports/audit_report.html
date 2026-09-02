@@ -5,15 +5,49 @@
   <a class="button button-outline" href="{% url 'reports:dashboard' %}">← All reports</a>
 </section>
 <div class="panel">
-  <div class="panel-heading"><div><p class="eyebrow">AUDIT SUMMARY</p><h3>{{ dataset.name|default:"Selected dataset" }}</h3></div><span class="pill pill-mint">{{ audit.quality_score|default:"Pending" }} quality score</span></div>
+  <div class="panel-heading"><div><p class="eyebrow">AUDIT SUMMARY</p><h3>{{ dataset.name|default:"Selected dataset" }}</h3><p class="panel-copy">A persisted record of the checks applied before model training.</p></div><span class="pill pill-mint">{{ audit.quality_score|default:"Pending" }} quality score</span></div>
   <div class="report-kpis">
     <div class="metric-card"><small>QUALITY</small><strong>{{ audit.quality_score|default:"—" }}</strong><span>Composite signal</span></div>
     <div class="metric-card"><small>DUPLICATES</small><strong>{{ audit.duplicate_rate|default:"—" }}%</strong><span>Perceptual match rate</span></div>
     <div class="metric-card"><small>LEAKAGE</small><strong>{{ audit.leakage_risk|default:"—" }}</strong><span>Split recommendation</span></div>
+    <div class="metric-card"><small>CLASSES</small><strong>{{ dataset.class_count|default:"—" }}</strong><span>{{ dataset.sample_count|default:"0" }} images</span></div>
+  </div>
+</div>
+<div class="two-col-section">
+  <div class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">VALIDATION EVIDENCE</p><h3>What was checked</h3></div></div>
+    <div class="profile-list">
+      <p><span>Readable images</span><strong>{{ validation.readable_count|default:"0" }}</strong></p>
+      <p><span>Invalid / corrupted</span><strong>{{ validation.invalid_count|default:"0" }}</strong></p>
+      <p><span>Exact duplicates</span><strong>{{ validation.duplicate_count|default:"0" }}</strong></p>
+      <p><span>Near duplicates</span><strong>{{ validation.near_duplicate_count|default:"0" }}</strong></p>
+      <p><span>Low resolution</span><strong>{{ validation.low_quality_count|default:"0" }}</strong></p>
+      <p><span>Unlabelled images</span><strong>{{ validation.unlabelled_count|default:"0" }}</strong></p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">SPLIT SAFETY</p><h3>{{ audit.leakage.split_strategy|default:"Not available" }}</h3></div></div>
+    <p class="panel-copy">{{ audit.leakage.note|default:"A split strategy will be selected after the metadata and image records are matched." }}</p>
+    <div class="profile-list">
+      <p><span>Group identifier</span><strong>{{ audit.leakage.group_id_source|default:"Not available" }}</strong></p>
+      <p><span>Detected groups</span><strong>{{ audit.leakage.group_count|default:"0" }}</strong></p>
+      <p><span>Label consistency</span><strong>{{ audit.label_consistency|default:"—" }}%</strong></p>
+      <p><span>Class imbalance</span><strong>{{ audit.imbalance_ratio|default:"Unknown" }}</strong></p>
+    </div>
   </div>
 </div>
 <div class="panel">
   <div class="panel-heading"><div><p class="eyebrow">RECOMMENDATION</p><h3>Next best action</h3></div></div>
   <p class="panel-copy">{{ audit.recommendation|default:"Run the dataset audit to generate a recommendation." }}</p>
+</div>
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">PIPELINE STAGES 0–5</p><h3>Evidence status</h3></div><span class="status status-{{ dataset.status }}">{{ dataset.get_status_display }}</span></div>
+  <div class="workflow-stage-grid dataset-workflow-grid">
+    {% for key, status in pipeline.stages.items %}
+      <article class="workflow-stage-card workflow-stage-{{ status }}"><h4>{{ key|title }}</h4><p>{{ status|title }}</p></article>
+    {% empty %}
+      <p class="empty-inline">Run the audit to populate stage evidence.</p>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

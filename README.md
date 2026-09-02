@@ -1,15 +1,27 @@
 # DermaAudit AI
 
-DermaAudit AI is a server-rendered Django workspace for skin-lesion image classification research. It keeps dataset validation, audit signals, model comparison, reports, and single-image review in one integrated application.
+DermaAudit AI is a server-rendered Django workspace for **generic image-classification dataset auditing and training**. Skin-lesion research is the flagship use case, but the same evidence-first workflow can be used for plant disease, X-ray, animal, food, or other labeled image datasets.
+
+The platform is designed to make model decisions traceable:
+
+```text
+ZIP dataset → validate → profile → harmonize → audit
+           → leakage-safe split → experiment → evaluate
+           → calibrate → register checkpoint → predict → monitor
+```
+
+It is a research and screening support tool, not a medical diagnostic device.
 
 ## Run on Replit or locally
+
+Install the declared Python dependencies, then run:
 
 ```bash
 python manage.py migrate --noinput
 python manage.py runserver 0.0.0.0:5000
 ```
 
-The Replit workflow **Start application** runs the migrations and starts Django on port `5000`, so the Preview panel can load the project immediately. The same command is suitable for local development. For a production-style process, use:
+The Replit workflow **Start application** runs the migrations and starts Django on port `5000`, so the Preview panel can load the project immediately. For a production-style process, use:
 
 ```bash
 python manage.py migrate --noinput
@@ -18,30 +30,96 @@ gunicorn --bind 0.0.0.0:5000 config.wsgi:application
 
 The project uses SQLite when `DATABASE_URL` is not set and PostgreSQL when it is. `SESSION_SECRET` is used for Django’s signing key when available; the development fallback should not be used for a public deployment.
 
-## Research workflow
+## How the workflow works
 
-The application follows the attached evidence-first workflow:
+### 1. Upload and validate
 
-1. Upload a compatible labeled image dataset.
-2. Validate format, images, labels, structure, and classification assumptions.
-3. Automatically profile image, label, metadata, class, and group information.
-4. Harmonize labels and metadata, then audit quality, duplicates, imbalance, and leakage.
-5. Use group-aware splits when entity IDs are available; otherwise use stratified splits.
-6. Configure and run a reproducible training experiment with a held-out test set.
-7. Compare model metrics, calibration signals, and per-class results in Reports.
-8. Store a selected checkpoint in the model registry.
-9. Upload one image for model-assisted prediction with confidence, alternatives, and Grad-CAM when available.
-10. Monitor prediction volume, abstentions, review queue, and drift prerequisites.
+Upload one `.zip` archive from **Datasets**. The archive may contain:
 
-Upload datasets as a single `.zip` with one folder per class, such as `benign/` and `malignant/`. A split dataset may use `train/`, `validation/`, and `test/` folders. Flat images can use a CSV/JSON manifest with image and label columns.
+- One folder per class, such as `benign/` and `malignant/`
+- Split folders such as `train/`, `validation/`, and `test/`, with class folders inside
+- Flat images paired with a recognized CSV or JSON manifest containing image and label columns
 
-## Scope and model status
+Before training, the validator checks supported formats, archive safety, readable images, corrupted files, dimensions, color modes, missing labels, class count, duplicate filenames, exact duplicate content, and near-duplicate content. The original archive is never modified.
 
-The interface is designed for research and screening support only; it is not a medical diagnostic device. The prediction screen validates images and provides a clearly labelled preview analysis until a trained checkpoint is registered for inference. Training experiments now run a deterministic CPU image classifier over the audited ZIP, report held-out metrics, and save a checkpoint under `media/checkpoints/`.
+### 2. Profile, harmonize, and audit
+
+The dataset profile records image formats, resolutions, channels, class distribution, metadata files and columns, available IDs, group information, and subgroup fields. Labels are normalized without replacing the original upload.
+
+The audit combines:
+
+- Image quality and validation findings
+- Exact and perceptual duplicate signals
+- Label and metadata consistency
+- Class imbalance and weighted-training recommendations
+- Group/entity identifiers for leakage control
+- Bias and fairness readiness when approved subgroup metadata exists
+
+Datasets with blocking validation errors remain **Needs review** and cannot be used for training.
+
+### 3. Choose a safe split and experiment
+
+The default split is **70% train / 15% validation / 15% test**. Training enforces that the values total 100%.
+
+- When matched patient, lesion, subject, case, study, or entity IDs exist, records are kept together with a group-aware split.
+- Without group IDs, the pipeline uses a deterministic class-aware stratified split.
+- Augmentation is applied only to training inputs; validation and test inputs remain untouched.
+
+Each experiment can compare a declared intervention:
+
+| Intervention | Training candidate |
+| --- | --- |
+| Original | Use the validated upload as-is |
+| Duplicate-free | Exclude exact duplicate images |
+| Leakage-controlled | Use group-aware splitting when group IDs exist |
+| Bias-mitigated | Preserve subgroup evidence for review |
+| Quality-controlled | Exclude low-resolution images |
+| Imbalance-handled | Use class-weighted loss |
+| Fully audited | Apply duplicate, near-duplicate, quality, group, and imbalance safeguards |
+
+### 4. Train and evaluate
+
+Choose one of the supported architecture profiles—EfficientNet-B0, ResNet-50, or MobileNetV3—and start an experiment from **Model training**. The CPU training runner records:
+
+- Train loss and train Macro-F1 per epoch
+- Validation Macro-F1 and learning rate per epoch
+- AdamW optimization and learning-rate scheduling
+- Early stopping and the best validation epoch
+- Held-out accuracy, Macro-F1, balanced accuracy, precision, recall, AUROC, confusion matrix, and per-class metrics
+
+The complete run record is available from **Reports → Model report**. Model selection should consider Macro-F1 and minority-class behavior, not accuracy alone.
+
+### 5. Reliability, registry, and prediction
+
+Each completed run saves a versioned checkpoint with its class mapping, preprocessing settings, split plan, intervention, evaluation metrics, calibration evidence, and dataset lineage. Select one checkpoint from **Experiments** before requesting a prediction.
+
+The prediction review:
+
+- Validates the uploaded image before inference
+- Applies calibrated confidence when calibration data exists
+- Shows the predicted class and top alternatives
+- Abstains when confidence or top-class margin is too low
+- Generates a Grad-CAM overlay when the checkpoint supports it
+- Always recommends qualified human review
+
+### 6. Monitoring
+
+**Reports** provides live workspace signals for dataset readiness, training activity, prediction volume, abstentions, average confidence, and review queue size. Data drift is compared with the active model’s training class distribution only when both inputs exist.
+
+Fairness drift and performance-after-deployment analysis remain explicitly unavailable until approved subgroup metadata and verified labels are available. Predictions are not treated as ground truth.
+
+## Upload limits and supported images
+
+- ZIP archives up to 2 GB
+- Up to 10,000 archive files
+- Images up to 50 MB each
+- CSV/JSON metadata up to 10 MB per file
+- JPG, JPEG, JFIF, PNG, WEBP, BMP, GIF, TIF, and TIFF
+- At least two labeled classes are required for training
 
 ## Verification
 
-Run the Django system check and test suite before handing off changes:
+Run the Django system check and test suite:
 
 ```bash
 python manage.py check

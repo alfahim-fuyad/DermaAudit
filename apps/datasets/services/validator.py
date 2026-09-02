@@ -53,6 +53,24 @@ def _metadata_labels(summary, rows):
     return labels
 
 
+def _difference_hash(image, size=16):
+    """Return a small perceptual hash for near-duplicate detection."""
+    image = image.convert("L").resize((size + 1, size), Image.Resampling.LANCZOS)
+    pixels = list(image.getdata())
+    return (
+        "".join(
+            "1" if pixels[row * (size + 1) + column] > pixels[row * (size + 1) + column + 1] else "0"
+            for row in range(size)
+            for column in range(size)
+        ),
+        sum(pixels) / len(pixels),
+    )
+
+
+def _hash_distance(first, second):
+    return sum(left != right for left, right in zip(first, second))
+
+
 def validate_upload(upload):
     """Inspect an uploaded ZIP without extracting it to the workspace."""
     report = {
@@ -103,6 +121,7 @@ def validate_upload(upload):
             report["warnings"].extend(metadata.get("warnings", []))
             metadata_labels = _metadata_labels(metadata, metadata_rows)
             seen_hashes = set()
+            perceptual_hashes = []
             for info in members:
                 path = PurePosixPath(info.filename)
                 if path.is_absolute() or ".." in path.parts:
@@ -149,6 +168,13 @@ def validate_upload(upload):
                         width, height = image.size
                         mode = image.mode
                         metadata_count = len(image.info or {})
+                        perceptual_hash = _difference_hash(image)
+                    near_duplicate = any(
+                        _hash_distance(perceptual_hash[0], previous[0]) <= 8
+                        and abs(perceptual_hash[1] - previous[1]) <= 32
+                        for previous in perceptual_hashes
+                    )
+                    perceptual_hashes.append(perceptual_hash)
                     low_quality = min(width, height) < MIN_IMAGE_DIMENSION
                     report["records"].append({
                         "filename": info.filename,
@@ -160,6 +186,8 @@ def validate_upload(upload):
                         "metadata_count": metadata_count,
                         "digest": digest,
                         "duplicate": duplicate,
+                        "perceptual_hash": perceptual_hash,
+                        "near_duplicate": near_duplicate and not duplicate,
                         "low_quality": low_quality,
                     })
                     report["readable_count"] += 1
@@ -169,6 +197,12 @@ def validate_upload(upload):
                         report["unlabelled_count"] += 1
                     if duplicate:
                         report["duplicate_count"] += 1
+                    if near_duplicate and not duplicate:
+                        report["near_duplicate_count"] += 1
+                        if len(report["warnings"]) < 25:
+                            report["warnings"].append(
+                                f"Near-duplicate image content detected: {info.filename}"
+                            )
                     if low_quality:
                         report["low_quality_count"] += 1
                         if len(report["warnings"]) < 25:

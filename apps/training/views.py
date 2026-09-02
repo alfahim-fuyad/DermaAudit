@@ -41,6 +41,7 @@ def _training_context(split_defaults=None, epochs_default=EPOCHS):
         "split_defaults": split_defaults,
         "epochs_default": epochs_default,
         "training_workflow_stages": TRAINING_WORKFLOW_STAGES,
+        "experiment_variants": EXPERIMENT_VARIANTS,
         "page_title": "Model training",
     }
 

@@ -109,6 +109,15 @@
           <option value="mobilenet_v3">MobileNetV3 · efficient</option>
         </select>
       </label>
+      <label class="training-field">
+        <span>Dataset intervention <small>Controlled comparison</small></span>
+        <select name="experiment_variant">
+          {% for variant in experiment_variants %}
+            <option value="{{ variant.key }}">{{ variant.label }} · {{ variant.intervention }}</option>
+          {% endfor %}
+        </select>
+        <small class="field-help">The original upload stays unchanged; only the selected training candidate is adjusted.</small>
+      </label>
       <div class="training-config-grid" aria-label="Training protocol">
         <label class="training-config-field">
           <b>Training split</b>

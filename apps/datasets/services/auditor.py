@@ -6,6 +6,9 @@ def build_audit(validation, profile, leakage, bias, imbalance):
     readable = validation.get("readable_count", 0)
     invalid = validation.get("invalid_count", 0)
     duplicate_rate = round((validation.get("duplicate_count", 0) / total) * 100, 1) if total else 0
+    near_duplicate_rate = round(
+        (validation.get("near_duplicate_count", 0) / total) * 100, 1
+    ) if total else 0
     quality_score = round((readable / total) * 100) if total else 0
     if invalid:
         quality_score = max(0, quality_score - min(20, invalid * 2))
@@ -20,10 +23,13 @@ def build_audit(validation, profile, leakage, bias, imbalance):
         recommendation_parts.append("Complete subgroup fairness analysis.")
     if low_quality:
         recommendation_parts.append("Review low-resolution images before training.")
+    if validation.get("near_duplicate_count"):
+        recommendation_parts.append("Review near-duplicate images before splitting.")
     if label_mismatches:
         recommendation_parts.append("Resolve image-label mismatches in the metadata.")
     return {
         "duplicate_rate": duplicate_rate,
+        "near_duplicate_rate": near_duplicate_rate,
         "quality_score": quality_score,
         "leakage_risk": leakage["risk"],
         "label_consistency": label_consistency,
@@ -32,6 +38,7 @@ def build_audit(validation, profile, leakage, bias, imbalance):
         "image_quality": {
             "readable": readable,
             "invalid": invalid,
+            "near_duplicate": validation.get("near_duplicate_count", 0),
             "low_quality": low_quality,
             "unlabelled": unlabelled_images,
             "minimum_dimension": 32,

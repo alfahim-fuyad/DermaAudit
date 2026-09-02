@@ -7,6 +7,7 @@ from apps.datasets.models import Dataset
 from apps.prediction.models import Prediction
 from apps.training.models import TrainingRun
 from .services.cleanup import clear_workspace
+from django.shortcuts import get_object_or_404
 
 
 def _percent(value):
@@ -111,6 +112,39 @@ def dashboard(request):
         "active_runs": [run for run in runs if run.status == "running"],
         "next_action": next_action,
         "page_title": "Reports",
+    })
+
+
+def audit_report(request, pk):
+    dataset = get_object_or_404(Dataset, pk=pk)
+    audit = dataset.audit or {}
+    validation = dataset.validation or {}
+    pipeline = dataset.pipeline or {}
+    return render(request, "reports/audit_report.html", {
+        "dataset": dataset,
+        "audit": audit,
+        "validation": validation,
+        "pipeline": pipeline,
+        "page_title": "Audit report",
+    })
+
+
+def model_report(request, pk):
+    run = get_object_or_404(TrainingRun.objects.select_related("dataset"), pk=pk)
+    config = run.config or {}
+    evaluation = config.get("evaluation") or {}
+    reliability = config.get("reliability") or {}
+    return render(request, "reports/model_report.html", {
+        "run": run,
+        "evaluation": evaluation,
+        "calibration": config.get("calibration") or reliability.get("calibration") or {},
+        "fairness": reliability.get("fairness") or {},
+        "statistics": config.get("statistics") or {},
+        "split_plan": config.get("split_plan") or {},
+        "intervention": config.get("intervention") or {},
+        "epoch_history": config.get("epoch_history") or [],
+        "workflow_stages": config.get("workflow_stages") or {},
+        "page_title": "Model report",
     })
 
 

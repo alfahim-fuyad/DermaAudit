@@ -7,7 +7,7 @@
     <h1>Evidence pipeline</h1>
     <p class="subhead">{{ dataset.name }} · Validation, harmonization, leakage control, and bias readiness.</p>
   </div>
-  <a class="text-link" href="{{ dataset.get_absolute_url }}">← Dataset profile</a>
+  <div class="page-intro-actions"><a class="text-link" href="{{ dataset.get_absolute_url }}">← Dataset profile</a>{% if dataset.audit %}<a class="text-link" href="{% url 'reports:audit_report' dataset.pk %}">Full report →</a>{% endif %}</div>
 </section>
 
 <section class="panel workflow-overview">
@@ -59,8 +59,9 @@
       <div><p class="eyebrow">CHECK RESULTS</p><h3>Quality signals</h3></div>
       <span class="status status-{{ dataset.status }}">{{ dataset.get_status_display }}</span>
     </div>
-    <div class="check-list">
-      <div><span class="check-icon">◉</span><p><strong>Duplicate detection</strong><small>Exact image-content comparison</small></p><b>{{ audit.duplicate_rate }}%</b></div>
+      <div class="check-list">
+      <div><span class="check-icon">◉</span><p><strong>Duplicate detection</strong><small>Exact + perceptual image-content comparison</small></p><b>{{ audit.duplicate_rate }}% exact</b></div>
+      <div><span class="check-icon">◉</span><p><strong>Near-duplicate review</strong><small>Perceptual hash similarity scan</small></p><b>{{ audit.near_duplicate_rate|default:"0" }}%</b></div>
       <div><span class="check-icon">◉</span><p><strong>Label consistency</strong><small>Class folder and metadata match</small></p><b>{{ audit.label_consistency }}%</b></div>
       <div><span class="check-icon">◉</span><p><strong>Leakage risk</strong><small>{{ audit.leakage.split_strategy|default:"Split policy pending" }}</small></p><b>{{ audit.leakage_risk }}</b></div>
       <div><span class="check-icon">◉</span><p><strong>Class balance</strong><small>Largest to smallest class</small></p><b>{{ audit.imbalance_ratio }}</b></div>

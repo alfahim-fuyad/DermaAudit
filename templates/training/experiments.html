@@ -19,14 +19,14 @@
 <div class="panel table-panel">
   {% if runs %}
   <div class="data-table">
-    <div class="table-row table-head"><span>Run</span><span>Dataset</span><span>Accuracy</span><span>Macro-F1</span><span>Model selection</span></div>
+     <div class="table-row table-head"><span>Run</span><span>Dataset</span><span>Accuracy</span><span>Macro-F1</span><span>Model selection</span></div>
     {% for run in runs %}
     <div class="table-row experiment-row">
       <span><i class="dataset-icon">{{ forloop.counter|stringformat:"02d" }}</i><strong>{{ run.get_architecture_display }}</strong></span>
       <span>{{ run.dataset.name|default:"Unassigned" }}</span>
       <span>{% if run.status == "completed" %}{{ run.accuracy|floatformat:3 }}{% else %}<em class="pending-value">{{ run.get_status_display }}</em>{% endif %}</span>
       <span>{% if run.status == "completed" %}{{ run.macro_f1|floatformat:3 }}{% else %}<em class="pending-value">Pending</em>{% endif %}</span>
-      <span>{% if run.is_active %}<b class="active-model-badge">Active for predictions</b>{% elif run.status == "completed" and run.config.checkpoint %}<form method="post" action="{% url 'training:activate_model' run.pk %}">{% csrf_token %}<button class="button button-small button-outline activate-model-button" type="submit">Use for predictions</button></form>{% else %}<em class="pending-value">Checkpoint pending</em>{% endif %}<small class="experiment-date">{{ run.created_at|date:"M j, Y" }}</small></span>
+       <span>{% if run.is_active %}<b class="active-model-badge">Active for predictions</b>{% elif run.status == "completed" and run.config.checkpoint %}<form method="post" action="{% url 'training:activate_model' run.pk %}">{% csrf_token %}<button class="button button-small button-outline activate-model-button" type="submit">Use for predictions</button></form>{% else %}<em class="pending-value">Checkpoint pending</em>{% endif %}{% if run.status == "completed" %}<a class="table-action" href="{% url 'reports:model_report' run.pk %}">Report</a>{% endif %}<small class="experiment-date">{{ run.created_at|date:"M j, Y" }}</small></span>
     </div>
     {% endfor %}
   </div>

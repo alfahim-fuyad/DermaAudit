@@ -82,12 +82,15 @@
     <p class="radar-footnote"><span>ⓘ</span> <span id="radarFootnote">{{ radar_data.footnote }}</span></p>
   </div>
   <div class="panel help-panel" id="helpPanel">
-    <div class="panel-heading"><div><p class="eyebrow">QUICK START GUIDE</p><h3>Three steps to a trustworthy result</h3></div><button class="help-reopen" type="button" id="helpReopen" aria-label="Open tutorial">↗</button></div>
+     <div class="panel-heading"><div><p class="eyebrow">QUICK START GUIDE</p><h3>Six steps to a trustworthy result</h3></div><button class="help-reopen" type="button" id="helpReopen" aria-label="Open tutorial">↗</button></div>
     <div class="help-progress"><span id="helpProgressBar"></span></div>
-    <div class="help-step" data-step="1"><span class="help-number">01</span><div><strong>Bring in your data</strong><p>Upload a labeled image dataset, organized by class folders.</p></div></div>
-    <div class="help-step is-hidden" data-step="2"><span class="help-number">02</span><div><strong>Audit before training</strong><p>Check quality, duplicates, imbalance, bias, and leakage risk.</p></div></div>
-    <div class="help-step is-hidden" data-step="3"><span class="help-number">03</span><div><strong>Review every decision</strong><p>Compare models and keep a human in the loop for low-confidence results.</p></div></div>
-    <div class="help-footer"><span id="helpStepLabel">1 of 3</span><div><button class="button button-outline button-small" type="button" id="helpBack" disabled>Back</button><button class="button button-primary button-small" type="button" id="helpNext">Next step <span>→</span></button></div></div>
+     <div class="help-step" data-step="1"><span class="help-number">01</span><div><strong>Upload your data</strong><p>Bring a labeled ZIP, with class folders or a CSV/JSON manifest for flat images.</p></div></div>
+     <div class="help-step is-hidden" data-step="2"><span class="help-number">02</span><div><strong>Validate the upload</strong><p>Find unreadable files, missing labels, unsafe paths, unsupported formats, and empty classes before training.</p></div></div>
+     <div class="help-step is-hidden" data-step="3"><span class="help-number">03</span><div><strong>Profile and audit</strong><p>Review image statistics, class balance, exact and near duplicates, metadata, bias readiness, and leakage risk.</p></div></div>
+     <div class="help-step is-hidden" data-step="4"><span class="help-number">04</span><div><strong>Prepare a controlled experiment</strong><p>Use a 70/15/15 split, group-aware IDs when available, and choose an audit intervention without changing the original ZIP.</p></div></div>
+     <div class="help-step is-hidden" data-step="5"><span class="help-number">05</span><div><strong>Train and compare</strong><p>Compare held-out Macro-F1, balanced accuracy, per-class results, calibration, and early-stopping evidence.</p></div></div>
+     <div class="help-step is-hidden" data-step="6"><span class="help-number">06</span><div><strong>Register, review, and monitor</strong><p>Activate a checkpoint, inspect confidence and Grad-CAM, abstain when uncertain, and keep verified human review in the loop.</p></div></div>
+     <div class="help-footer"><span id="helpStepLabel">1 of 6</span><div><button class="button button-outline button-small" type="button" id="helpBack" disabled>Back</button><button class="button button-primary button-small" type="button" id="helpNext">Next step <span>→</span></button></div></div>
   </div>
 </section>
 <section class="two-col-section">
@@ -117,7 +120,7 @@
          <div class="model-empty-icon" aria-hidden="true"><span>◈</span><i></i></div>
          <div class="model-empty-copy">
            <span class="model-empty-kicker">READY WHEN YOU ARE</span>
-           <strong>No model connected</strong>
+          <strong>No model registered yet</strong>
            <p>Finish one benchmark to make a versioned checkpoint available for review.</p>
          </div>
        </div>
@@ -136,7 +139,7 @@
     <button class="help-modal-close" type="button" data-help-close aria-label="Close tutorial">×</button>
     <span class="pill pill-mint">WORKSPACE GUIDE</span>
     <h2 id="helpModalTitle">How to use DermaAudit AI</h2>
-    <p class="help-modal-intro">Follow these steps to prepare your image dataset, train a classifier, review predictions, and keep a clear research record.</p>
+     <p class="help-modal-intro">Follow the evidence chain from dataset intake to monitored prediction. Each stage records what the system knows, what it cannot verify, and what still needs human review.</p>
 
     <div class="modal-tutorial-step">
       <div class="modal-step-heading"><b>01</b><div><strong>Upload a labeled dataset</strong><small>Start from Datasets → Upload a dataset.</small></div></div>
@@ -154,23 +157,23 @@
     </div>
 
     <div class="modal-tutorial-step">
-      <div class="modal-step-heading"><b>02</b><div><strong>Read the dataset profile and audit</strong><small>Open the dataset after upload.</small></div></div>
-      <p>Check the detected class names, sample count, image dimensions, unreadable files, duplicates, class balance, and possible leakage. Fix warnings before training.</p>
+      <div class="modal-step-heading"><b>02</b><div><strong>Validate, profile, and audit</strong><small>Open the dataset evidence pipeline after upload.</small></div></div>
+      <p>Review supported formats, readable images, missing labels, dimensions, channels, metadata, exact and near duplicates, class balance, subgroup availability, and possible leakage. Blocking findings keep the dataset out of training.</p>
     </div>
 
     <div class="modal-tutorial-step">
-      <div class="modal-step-heading"><b>03</b><div><strong>Train and compare models</strong><small>Go to Model training.</small></div></div>
-      <p>Select a ready dataset, choose an architecture, and start an experiment. Compare accuracy and Macro-F1 from the same dataset split. A completed run saves the checkpoint used for prediction.</p>
+      <div class="modal-step-heading"><b>03</b><div><strong>Configure a controlled experiment</strong><small>Go to Model training.</small></div></div>
+      <p>Choose a ready dataset, architecture, split percentages, and intervention. Group IDs produce group-aware splits; otherwise the system uses deterministic class-aware stratification. Augmentation never enters validation or test data.</p>
     </div>
 
     <div class="modal-tutorial-step">
-      <div class="modal-step-heading"><b>04</b><div><strong>Analyze a new image</strong><small>Open New prediction.</small></div></div>
-      <p>Upload a single image and review the predicted class, confidence percentage, and top alternative classes. Treat low-confidence results as a signal for expert review—not as a final diagnosis.</p>
+      <div class="modal-step-heading"><b>04</b><div><strong>Evaluate and register evidence</strong><small>Open Reports and Experiments after training.</small></div></div>
+      <p>Review held-out accuracy, Macro-F1, balanced accuracy, precision, recall, AUROC, per-class metrics, confusion matrix, calibration, fairness availability, learning-rate history, and early stopping. Activate a completed checkpoint only after comparing the evidence.</p>
     </div>
 
     <div class="modal-tutorial-step">
-      <div class="modal-step-heading"><b>05</b><div><strong>Review reports and manage history</strong><small>Use Reports for the complete workspace view.</small></div></div>
-      <p>Reports shows dataset readiness, completed experiments, best accuracy, prediction count, and audit coverage. From Datasets, Experiments, Prediction history, or Reports you can clear old records; destructive cleanup always asks for confirmation.</p>
+      <div class="modal-step-heading"><b>05</b><div><strong>Review and monitor predictions</strong><small>Open New prediction and Reports.</small></div></div>
+      <p>Upload one image to see the model class, calibrated confidence, top alternatives, and Grad-CAM when available. Low-confidence or close-margin results abstain and recommend qualified expert review. Reports tracks abstentions, queue size, class-mix drift, and the prerequisites for fairness drift.</p>
     </div>
 
     <div class="modal-support-box"><strong>Supported workflow</strong><span>Dataset ZIP → Profile & audit → Train → New prediction → Reports</span></div>

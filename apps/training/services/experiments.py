@@ -47,6 +47,29 @@ EXPERIMENT_VARIANTS = (
 )
 
 
+def prepare_records(records, variant):
+    """Apply only the declared intervention for a controlled experiment."""
+    records = list(records or [])
+    if variant == "duplicate_free":
+        return [
+            record for record in records
+            if not record.get("duplicate")
+        ]
+    if variant == "quality_controlled":
+        return [
+            record for record in records
+            if not record.get("low_quality")
+        ]
+    if variant == "fully_audited":
+        return [
+            record for record in records
+            if not record.get("duplicate")
+            and not record.get("near_duplicate")
+            and not record.get("low_quality")
+        ]
+    return records
+
+
 def build_experiment_plan(completed_variant="original"):
     """Return JSON-safe experiment states without claiming unrun work completed."""
     return [
