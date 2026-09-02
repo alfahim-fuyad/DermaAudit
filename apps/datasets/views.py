@@ -4,6 +4,7 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Dataset
 from .services.pipeline import DATASET_WORKFLOW_STAGES, run_dataset_pipeline
+from .services.validator import MAX_ARCHIVE_BYTES
 from apps.reports.services.cleanup import clear_datasets, delete_dataset
 
 
@@ -17,6 +18,12 @@ def dataset_upload(request):
         upload = request.FILES.get("dataset_file")
         if not upload:
             messages.error(request, "Choose a ZIP dataset before continuing.")
+            return render(request, "datasets/upload.html", {"page_title": "Upload dataset"})
+        if not upload.name.lower().endswith(".zip"):
+            messages.error(request, "Upload a ZIP dataset. Other file types are not supported.")
+            return render(request, "datasets/upload.html", {"page_title": "Upload dataset"})
+        if upload.size > MAX_ARCHIVE_BYTES:
+            messages.error(request, "The dataset exceeds the 7 GB upload limit.")
             return render(request, "datasets/upload.html", {"page_title": "Upload dataset"})
         name = request.POST.get("name", "").strip() or (upload.name.rsplit(".", 1)[0] if upload else "Untitled dataset")
         with transaction.atomic():

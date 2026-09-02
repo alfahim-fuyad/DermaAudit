@@ -161,7 +161,8 @@
       const progress = state.progress || {};
       const percent = Math.max(0, Math.min(100, Number(progress.percent) || 0));
       const steps = ["validate", "load", "prepare", "train", "evaluate", "checkpoint"];
-      const currentIndex = steps.indexOf(progress.step);
+      const isComplete = state.status === "completed" || progress.step === "complete";
+      const currentIndex = isComplete ? steps.length : steps.indexOf(progress.step);
       panel.querySelector("[data-progress-fill]")?.style.setProperty("width", `${percent}%`);
       const percentNode = panel.querySelector("[data-progress-percent]");
       if (percentNode) percentNode.textContent = `${percent}%`;
@@ -170,10 +171,12 @@
       const detailNode = panel.querySelector("[data-progress-detail]");
       if (detailNode) detailNode.textContent = progress.detail || "Working through the next step.";
       const countNode = panel.querySelector("[data-progress-step-count]");
-      if (countNode) countNode.textContent = currentIndex < 0 ? "Finishing up" : `Step ${currentIndex + 1} of ${steps.length}`;
+      if (countNode) countNode.textContent = isComplete
+        ? "Complete"
+        : currentIndex < 0 ? "Finishing up" : `Step ${currentIndex + 1} of ${steps.length}`;
       panel.querySelectorAll("[data-progress-step]").forEach((stepNode, index) => {
-        stepNode.classList.toggle("is-complete", currentIndex >= 0 && index < currentIndex);
-        stepNode.classList.toggle("is-active", index === currentIndex || (currentIndex < 0 && index === 0));
+        stepNode.classList.toggle("is-complete", isComplete || (currentIndex >= 0 && index < currentIndex));
+        stepNode.classList.toggle("is-active", !isComplete && (index === currentIndex || (currentIndex < 0 && index === 0)));
       });
     };
 
@@ -191,7 +194,31 @@
           });
           if (state.status !== "running" && !reloading) {
             reloading = true;
-            window.location.reload();
+            const panels = progressNodes.filter((node) => node.dataset.statusUrl === url && node.matches("[data-training-progress]"));
+            panels.forEach((panel) => {
+              const complete = state.status === "completed";
+              panel.classList.toggle("is-complete", complete);
+              panel.classList.toggle("is-failed", !complete);
+              const title = panel.querySelector("[data-progress-title]");
+              if (title) title.textContent = complete ? "Training complete" : "Training needs attention";
+              const badge = panel.querySelector(".progress-live-badge");
+              if (badge) {
+                badge.classList.toggle("is-complete", complete);
+                badge.classList.toggle("is-failed", !complete);
+                const badgeText = badge.querySelector("span");
+                if (badgeText) badgeText.textContent = complete ? "COMPLETE" : "FAILED";
+              }
+              const message = panel.querySelector("[data-training-complete-message]");
+              if (message) {
+                message.hidden = false;
+                message.textContent = complete
+                  ? "✓ Training complete — checkpoint saved and ready for prediction."
+                  : `Training needs attention — ${state.error || "review the run details and try again."}`;
+                message.classList.toggle("is-error", !complete);
+              }
+              renderProgress(panel, state);
+            });
+            window.setTimeout(() => window.location.reload(), 4500);
           }
           return state.status;
         } catch (_error) {

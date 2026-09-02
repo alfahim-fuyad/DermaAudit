@@ -98,6 +98,24 @@ class DatasetValidatorTests(SimpleTestCase):
         self.assertEqual(report["classes"], ["cats", "dogs"])
         self.assertEqual(report["class_counts"], {"cats": 1, "dogs": 1})
 
+    def test_ham10000_image_parts_use_image_id_and_dx_metadata(self):
+        report = validate_upload(_zip_file([
+            ("HAM10000_images_part_1/ISIC_0024306.jpg", _image_bytes()),
+            ("HAM10000_images_part_1/ISIC_0024307.jpg", _image_bytes("black")),
+            ("HAM10000_images_part_2/ISIC_0024308.jpg", _image_bytes("red")),
+            (
+                "HAM10000_metadata.csv",
+                b"image_id,dx\nISIC_0024306,mel\nISIC_0024307,nv\nISIC_0024308,bcc\n",
+            ),
+            ("hmnist_28_28_L.csv", b"pixel_0,pixel_1\n0,1\n"),
+        ]))
+
+        self.assertTrue(report["valid"])
+        self.assertEqual(report["classes"], ["bcc", "mel", "nv"])
+        self.assertEqual(report["metadata"]["id_column"], "image_id")
+        self.assertEqual(report["metadata"]["label_column"], "dx")
+        self.assertIn("hmnist_28_28_L.csv", report["metadata"]["additional_files"])
+
     def test_non_zip_upload_is_rejected(self):
         report = validate_upload(SimpleUploadedFile("dataset.tar", b"archive"))
 
@@ -190,6 +208,31 @@ class DatasetPipelineTests(TestCase):
         self.assertEqual(result.pipeline["status"], "completed")
         self.assertNotIn("records", result.validation)
         self.assertEqual(result.audit["leakage_risk"], "Low")
+
+
+class DatasetUploadViewTests(TestCase):
+    def test_upload_view_rejects_non_zip_before_creating_dataset(self):
+        response = self.client.post(
+            reverse("datasets:upload"),
+            {"name": "Wrong format", "dataset_file": SimpleUploadedFile("dataset.tar", b"archive")},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Upload a ZIP dataset")
+        self.assertFalse(Dataset.objects.exists())
+
+    def test_upload_view_rejects_files_over_the_configured_limit(self):
+        from unittest.mock import patch
+
+        with patch("apps.datasets.views.MAX_ARCHIVE_BYTES", 1):
+            response = self.client.post(
+                reverse("datasets:upload"),
+                {"name": "Too large", "dataset_file": SimpleUploadedFile("dataset.zip", b"12")},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "7 GB upload limit")
+        self.assertFalse(Dataset.objects.exists())
 
 
 class DatasetAuditViewTests(TestCase):

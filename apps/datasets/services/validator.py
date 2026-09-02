@@ -22,12 +22,13 @@ IMAGE_EXTENSIONS = {
 }
 MAX_FILES = 10000
 MAX_IMAGE_BYTES = 50 * 1024 * 1024
-MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
+MAX_ARCHIVE_BYTES = 7 * 1024 * 1024 * 1024
 MIN_IMAGE_DIMENSION = 32
 GENERIC_LABEL_FOLDERS = {
     "data", "dataset", "files", "image", "images", "photo", "photos",
     "pictures", "test", "train", "training", "val", "valid", "validation",
 }
+IMAGE_CONTAINER_MARKERS = ("images_part", "image_part", "imageset", "image_set")
 
 
 def _label_for_member(name):
@@ -51,6 +52,13 @@ def _metadata_labels(summary, rows):
         for key in _record_keys(str(identifier)):
             labels.setdefault(key, label)
     return labels
+
+
+def _is_image_container(folder_label):
+    normalized = folder_label.casefold().replace("-", "_")
+    return normalized in GENERIC_LABEL_FOLDERS or any(
+        marker in normalized for marker in IMAGE_CONTAINER_MARKERS
+    )
 
 
 def _difference_hash(image, size=16):
@@ -96,7 +104,7 @@ def validate_upload(upload):
         report["errors"].append("No dataset file was provided.")
         return report
     if getattr(upload, "size", 0) > MAX_ARCHIVE_BYTES:
-        report["errors"].append("The dataset exceeds the 2 GB upload limit.")
+        report["errors"].append("The dataset exceeds the 7 GB upload limit.")
         return report
     if not upload.name.lower().endswith(".zip"):
         report["errors"].append(
@@ -141,7 +149,7 @@ def validate_upload(upload):
                     metadata_label
                     if metadata_label and (
                         not folder_label
-                        or folder_label.casefold() in GENERIC_LABEL_FOLDERS
+                        or _is_image_container(folder_label)
                     )
                     else folder_label
                 )

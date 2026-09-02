@@ -136,7 +136,8 @@
 .active-model-badge{display:inline-flex;padding:6px 9px;border-radius:20px;background:#e5f8ee;color:#218c5d;font:500 9px "DM Mono",monospace}
 .activate-model-button{padding:7px 9px;font-size:10px;white-space:nowrap}
 .experiment-date{display:block;margin-top:3px;color:#a0abb3;font-size:9px}
-.training-layout{grid-template-columns:minmax(0,1.08fr) minmax(310px,.92fr);gap:18px;align-items:stretch}
+.training-layout{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:stretch}
+.training-layout>.panel{height:100%;box-sizing:border-box}
 .training-form,.architecture-panel{padding:27px 28px}
 .training-heading{align-items:center;margin-bottom:18px}
 .step-badge,.architecture-count{font:500 9px "DM Mono",monospace;letter-spacing:.7px;color:#8e9aa4;background:#f5f8fa;border:1px solid #e8edf0;border-radius:20px;padding:7px 10px;white-space:nowrap}
@@ -163,6 +164,8 @@
 .progress-run-name{margin:6px 0 0;color:#7d8b96;font-size:11px}
 .progress-run-name span{color:#b1bdc5;padding:0 4px}
 .progress-live-badge{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #d9f1e5;border-radius:20px;background:#f3fcf7;color:#239566;font:500 9px "DM Mono",monospace;letter-spacing:.8px}
+.progress-live-badge.is-complete{border-color:#c5ead5;background:#effbf5;color:#208b5b}
+.progress-live-badge.is-failed{border-color:#f0d2c4;background:#fff8f4;color:#b96945}
 .progress-live-badge i{width:7px;height:7px;border-radius:50%;background:#2fb47d;box-shadow:0 0 0 4px #dff6e9;animation:progress-pulse 1.5s ease-in-out infinite}
 .progress-summary{align-items:flex-end;margin-top:19px}
 .progress-summary strong{display:block;font-size:14px}
@@ -189,6 +192,10 @@
 .training-steps li.is-complete:after{background:#9cddbe}
 .progress-reassurance{display:flex;align-items:center;gap:7px;margin:22px 0 0;padding:10px 12px;border:1px solid #eaf1f7;border-radius:9px;background:#f8fbfe;color:#7990a4;font-size:10px}
 .progress-reassurance span{color:var(--blue)}
+.training-complete-message{margin:14px 0 0;padding:11px 13px;border:1px solid #c9ecd9;border-radius:9px;background:#effbf5;color:#218b5b;font-size:11px;font-weight:700}
+.training-complete-message.is-error{border-color:#f0d2c4;background:#fff8f4;color:#b96945}
+.training-progress-panel.is-complete .progress-track span{background:linear-gradient(90deg,#46b985,#32a36e)}
+.training-progress-panel.is-failed .progress-track span{background:#ca7858}
 @keyframes progress-pulse{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.12)}}
 @keyframes progress-step-pulse{0%,100%{box-shadow:0 0 0 3px #f1f6ff}50%{box-shadow:0 0 0 6px #e5efff}}
 @keyframes progress-shimmer{to{background-position:-200% 0}}

@@ -4,6 +4,7 @@
   <div><p class="eyebrow">REPORTING / DATA QUALITY</p><h1>Audit report</h1><p class="subhead">A clear record of the checks applied to a dataset.</p></div>
   <a class="button button-outline" href="{% url 'reports:dashboard' %}">← All reports</a>
 </section>
+<div class="audit-report-page">
 <div class="panel">
   <div class="panel-heading"><div><p class="eyebrow">AUDIT SUMMARY</p><h3>{{ dataset.name|default:"Selected dataset" }}</h3><p class="panel-copy">A persisted record of the checks applied before model training.</p></div><span class="pill pill-mint">{{ audit.quality_score|default:"Pending" }} quality score</span></div>
   <div class="report-kpis">
@@ -49,5 +50,6 @@
       <p class="empty-inline">Run the audit to populate stage evidence.</p>
     {% endfor %}
   </div>
+</div>
 </div>
 {% endblock %}

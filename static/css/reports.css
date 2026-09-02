@@ -52,6 +52,12 @@
 .center-copy{max-width:260px;margin:0 auto 22px;text-align:center;color:var(--muted);font-size:12px;line-height:1.65}
 .reliability-panel .button{margin-top:auto}
 .report-section-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:0 5.2% 24px}
+.audit-report-page{--audit-grid-columns:repeat(2,minmax(0,1fr));--audit-grid-gap:16px}
+.audit-report-page>.panel,.audit-report-page>.two-col-section{margin-left:clamp(24px,5.2%,58px);margin-right:clamp(24px,5.2%,58px)}
+.audit-report-page>.panel{margin-bottom:24px}
+.audit-report-page>.two-col-section{grid-template-columns:var(--audit-grid-columns);gap:var(--audit-grid-gap);margin-bottom:24px}
+.audit-report-page .report-kpis,.audit-report-page .dataset-workflow-grid{grid-template-columns:var(--audit-grid-columns);gap:var(--audit-grid-gap)}
+.audit-report-page .report-kpis{margin-left:0;margin-right:0}
 .report-list{margin:0 -25px}
 .report-list-row{display:flex;align-items:center;gap:10px;min-height:55px;padding:9px 25px;border-top:1px solid #eef1f3}
 .report-list-row>div{flex:1;min-width:0}
@@ -74,4 +80,9 @@
 .report-table th{color:#8c98a2;font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.6px;text-transform:uppercase}
 .report-table tr:last-child td{border-bottom:0}
 @media(max-width:720px){.report-actions,.page-actions{align-items:flex-start;flex-direction:column}.report-live-strip{align-self:stretch;justify-content:center}.report-kpis{grid-template-columns:1fr;margin-left:18px;margin-right:18px}.report-kpis .metric-card{padding:16px}.report-live-monitor,.monitoring-panel{margin-left:18px;margin-right:18px;padding:19px 18px}.live-run-list{margin-left:-18px;margin-right:-18px}.live-run-row{padding-left:18px;padding-right:18px;align-items:flex-start}.live-run-stage{display:none}.live-empty{padding-left:18px;padding-right:18px}.report-section-grid{grid-template-columns:1fr;margin-left:18px;margin-right:18px}.cleanup-panel{align-items:flex-start;flex-direction:column;margin-left:18px;margin-right:18px}.cleanup-links{justify-content:flex-start}.report-table{min-width:520px}.monitoring-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.monitoring-notice{display:block}.monitoring-notice p{margin-bottom:7px}}
+@media(max-width:720px){
+ .audit-report-page>.panel,.audit-report-page>.two-col-section{margin-left:18px;margin-right:18px}
+ .audit-report-page .report-kpis{grid-template-columns:1fr;margin-left:0!important;margin-right:0!important}
+ .audit-report-page .dataset-workflow-grid{grid-template-columns:1fr}
+}
 @media(max-width:420px){.monitoring-facts{grid-template-columns:1fr}}

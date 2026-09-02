@@ -84,7 +84,7 @@
   <div class="panel help-panel" id="helpPanel">
      <div class="panel-heading"><div><p class="eyebrow">QUICK START GUIDE</p><h3>Six steps to a trustworthy result</h3></div><button class="help-reopen" type="button" id="helpReopen" aria-label="Open tutorial">↗</button></div>
     <div class="help-progress"><span id="helpProgressBar"></span></div>
-     <div class="help-step" data-step="1"><span class="help-number">01</span><div><strong>Upload your data</strong><p>Bring a labeled ZIP, with class folders or a CSV/JSON manifest for flat images.</p></div></div>
+       <div class="help-step" data-step="1"><span class="help-number">01</span><div><strong>Upload your data</strong><p>Bring a labeled ZIP with class folders, or use CSV/JSON metadata for flat or multi-folder datasets such as HAM10000.</p></div></div>
      <div class="help-step is-hidden" data-step="2"><span class="help-number">02</span><div><strong>Validate the upload</strong><p>Find unreadable files, missing labels, unsafe paths, unsupported formats, and empty classes before training.</p></div></div>
      <div class="help-step is-hidden" data-step="3"><span class="help-number">03</span><div><strong>Profile and audit</strong><p>Review image statistics, class balance, exact and near duplicates, metadata, bias readiness, and leakage risk.</p></div></div>
      <div class="help-step is-hidden" data-step="4"><span class="help-number">04</span><div><strong>Prepare a controlled experiment</strong><p>Use a 70/15/15 split, group-aware IDs when available, and choose an audit intervention without changing the original ZIP.</p></div></div>
@@ -143,7 +143,7 @@
 
     <div class="modal-tutorial-step">
       <div class="modal-step-heading"><b>01</b><div><strong>Upload a labeled dataset</strong><small>Start from Datasets → Upload a dataset.</small></div></div>
-      <p>Upload one <code>.zip</code> file. Each image should be inside a folder named after its class.</p>
+      <p>Upload one <code>.zip</code> file. Class folders are supported, but they are not required when metadata maps image IDs to labels.</p>
       <pre aria-label="Example dataset folder structure"><code>my_dataset/
 ├── train/
 │   ├── healthy/
@@ -153,7 +153,7 @@
 └── test/
     ├── healthy/
     └── affected/</code></pre>
-      <p class="modal-tip"><strong>Remember:</strong> use at least two classes. JPG, PNG, WEBP, BMP, GIF, JFIF, TIF, and TIFF are supported.</p>
+      <p class="modal-tip"><strong>Remember:</strong> use at least two classes. HAM10000-style <code>images_part_1/</code> and <code>images_part_2/</code> folders are treated as image containers, with <code>image_id</code> → <code>dx</code> metadata mapping.</p>
     </div>
 
     <div class="modal-tutorial-step">
@@ -176,7 +176,7 @@
       <p>Upload one image to see the model class, calibrated confidence, top alternatives, and Grad-CAM when available. Low-confidence or close-margin results abstain and recommend qualified expert review. Reports tracks abstentions, queue size, class-mix drift, and the prerequisites for fairness drift.</p>
     </div>
 
-    <div class="modal-support-box"><strong>Supported workflow</strong><span>Dataset ZIP → Profile & audit → Train → New prediction → Reports</span></div>
+     <div class="modal-support-box"><strong>Supported workflow</strong><span>Detect folders + metadata → Validate → Profile & audit → Train → Predict → Monitor</span></div>
     <a class="button button-primary button-full" href="{% url 'datasets:upload' %}">Begin with a dataset <span>→</span></a>
   </div>
 </div>

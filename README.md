@@ -39,8 +39,19 @@ Upload one `.zip` archive from **Datasets**. The archive may contain:
 - One folder per class, such as `benign/` and `malignant/`
 - Split folders such as `train/`, `validation/`, and `test/`, with class folders inside
 - Flat images paired with a recognized CSV or JSON manifest containing image and label columns
+- Multiple image-part folders paired with metadata, such as HAM10000:
 
-Before training, the validator checks supported formats, archive safety, readable images, corrupted files, dimensions, color modes, missing labels, class count, duplicate filenames, exact duplicate content, and near-duplicate content. The original archive is never modified.
+  ```text
+  HAM10000/
+  ├── HAM10000_images_part_1/
+  ├── HAM10000_images_part_2/
+  ├── HAM10000_metadata.csv
+  └── hmnist_28_28_L.csv
+  ```
+
+  The scanner recursively finds images in both parts, maps `image_id` to the image filename, and uses `dx` as the class label. Extra tabular exports such as `hmnist_*.csv` are detected and marked unused when the original JPEGs are available.
+
+Before training, the validator checks supported formats, archive safety, readable images, corrupted files, dimensions, color modes, missing labels, class count, duplicate filenames, exact duplicate content, and near-duplicate content. The original archive is never modified, and image-part folders are not mistaken for class labels when metadata is present.
 
 ### 2. Profile, harmonize, and audit
 
@@ -110,7 +121,7 @@ Fairness drift and performance-after-deployment analysis remain explicitly unava
 
 ## Upload limits and supported images
 
-- ZIP archives up to 2 GB
+- ZIP archives up to 7 GB; larger datasets may require local processing
 - Up to 10,000 archive files
 - Images up to 50 MB each
 - CSV/JSON metadata up to 10 MB per file

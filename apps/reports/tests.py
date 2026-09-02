@@ -93,3 +93,23 @@ class ReportsDashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["datasets"], 1)
         self.assertEqual(response.json()["active_runs"][0]["progress"]["percent"], 42)
+
+
+class AuditReportTests(TestCase):
+    def test_audit_report_renders_the_shared_two_column_grid_wrapper(self):
+        dataset = Dataset.objects.create(
+            name="Audited dataset",
+            status="ready",
+            sample_count=24,
+            class_count=2,
+            validation={"readable_count": 24},
+            audit={"quality_score": 94, "recommendation": "Ready for training."},
+            pipeline={"stages": {"validation": "completed", "audit": "completed"}},
+        )
+
+        response = self.client.get(reverse("reports:audit_report", args=[dataset.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="audit-report-page"')
+        self.assertContains(response, 'class="report-kpis"')
+        self.assertContains(response, "Ready for training.")

@@ -33,6 +33,7 @@ def build_profile(validation):
         "unlabelled_images": validation.get("unlabelled_count", 0),
         "low_quality_images": low_quality_images,
         "metadata_files": metadata.get("files", []),
+        "additional_tabular_files": metadata.get("additional_files", []),
         "metadata_columns": metadata.get("columns", []),
         "metadata_rows": metadata.get("row_count", 0),
         "metadata_ids": metadata.get("id_column"),

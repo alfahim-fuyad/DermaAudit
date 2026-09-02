@@ -28,7 +28,7 @@ GROUP_COLUMN_HINTS = (
     "study_id",
     "entity_id",
 )
-LABEL_COLUMN_HINTS = ("label", "class", "category", "diagnosis", "target")
+LABEL_COLUMN_HINTS = ("label", "class", "category", "diagnosis", "target", "dx")
 SUBGROUP_COLUMN_HINTS = (
     "age",
     "sex",
@@ -98,6 +98,7 @@ def read_metadata(archive):
     summary = {
         "available": False,
         "files": [],
+        "additional_files": [],
         "columns": [],
         "row_count": 0,
         "id_column": None,
@@ -113,7 +114,13 @@ def read_metadata(archive):
     rows = []
 
     for info in archive.infolist():
-        if info.is_dir() or not _metadata_member(info):
+        if info.is_dir():
+            continue
+        suffix = info.filename.rsplit(".", 1)[-1].lower() if "." in info.filename else ""
+        if suffix not in {"csv", "json"}:
+            continue
+        if not _metadata_member(info):
+            summary["additional_files"].append(info.filename)
             continue
         summary["files"].append(info.filename)
         try:
@@ -125,6 +132,11 @@ def read_metadata(archive):
 
     if not rows:
         summary["files"] = summary["files"][:5]
+        if summary["additional_files"]:
+            summary["warnings"].append(
+                "Additional tabular file(s) detected but not used for image mapping: "
+                + ", ".join(summary["additional_files"][:5])
+            )
         return summary, rows
 
     columns = sorted({str(column) for row in rows for column in row})
@@ -143,6 +155,11 @@ def read_metadata(archive):
             for hint in SUBGROUP_COLUMN_HINTS
         )
     ][:20]
+    if summary["additional_files"]:
+        summary["warnings"].append(
+            "Additional tabular file(s) detected but not used for image mapping: "
+            + ", ".join(summary["additional_files"][:5])
+        )
     return summary, rows
 
 

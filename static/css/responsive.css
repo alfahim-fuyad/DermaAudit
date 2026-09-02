@@ -92,7 +92,7 @@ img{max-width:100%}
 }
 
 @media (min-width:721px) and (max-width:900px){
-  .overview-insights,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid{grid-template-columns:minmax(0,1fr)!important}
+   .overview-live-grid,.overview-insights,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid{grid-template-columns:minmax(0,1fr)!important}
   .auth-page{grid-template-columns:minmax(0,1fr)!important;max-width:620px;padding-left:28px;padding-right:28px}
   .auth-aside{display:none}
   .metric-grid,.report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
