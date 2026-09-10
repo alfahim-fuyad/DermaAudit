@@ -15,12 +15,12 @@ from .services.trainer import DEFAULT_SPLIT, EPOCHS, run_training
 
 
 TRAINING_WORKFLOW_STAGES = (
-    ("stage_6_experiments", "Stage 6 · Experiments", "Compare controlled benchmark variants"),
-    ("stage_7_modeling", "Stage 7 · Modeling", "Detect classes and configure the classification head"),
-    ("stage_8_evaluation", "Stage 8 · Evaluation", "Measure held-out and per-class performance"),
-    ("stage_9_reliability", "Stage 9 · Reliability", "Calibrate confidence and record reliability evidence"),
-    ("stage_10_xai", "Stage 10 · XAI", "Generate Grad-CAM at prediction time"),
-    ("stage_11_model_store", "Stage 11 · Model store", "Save versioned checkpoint and lineage"),
+    ("stage_7_preprocessing", "Step 7 · Preprocessing", "Path mapping, load, resize, RGB conversion, pixel normalization, label encoding"),
+    ("stage_8_splitting", "Step 8 · Dataset splitting", "Train / validation / test split, stratified or group-aware"),
+    ("stage_9_preparation", "Step 9 · Training preparation", "Class-imbalance handling, augmentation (training set only), one-hot encoding"),
+    ("stage_10_training", "Step 10 · Training", "Train the model on the cleaned, training-ready dataset"),
+    ("stage_11_evaluation", "Step 11 · Evaluation", "Measure held-out and per-class performance with one protocol"),
+    ("stage_12_registry", "Step 12 · Registry", "Calibrate, save a versioned checkpoint, and record lineage"),
 )
 
 
