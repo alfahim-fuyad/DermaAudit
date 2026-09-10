@@ -37,12 +37,40 @@
     </div>
   </div>
 </div>
+{% if audit.issues %}
+<div class="panel table-panel issues-panel">
+  <div class="panel-heading"><div><p class="eyebrow">ISSUES FOUND</p><h3>{{ audit.issue_count|default:"0" }} issue(s) · highest severity {{ audit.highest_severity|default:"None" }}</h3></div></div>
+  <div class="issue-table">
+    <div class="issue-row issue-head"><span>Issue</span><span>Count</span><span>Severity</span><span>Recommended action</span></div>
+    {% for issue in audit.issues %}
+      <div class="issue-row{% if issue.severity == 'None' %} issue-pass{% endif %}">
+        <div class="issue-name"><strong>{{ issue.title }}</strong><small>{{ issue.detail }}</small></div>
+        <b>{{ issue.count }}</b>
+        <span class="pill severity-{{ issue.severity|default:'None' }}">{{ issue.severity|default:"None" }}</span>
+        <small class="issue-action">{{ issue.action }}</small>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% if audit.cleaning %}
+<div class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">AUTOMATIC CLEANING</p><h3>{{ audit.cleaning.kept_count }} of {{ audit.cleaning.audited_images }} samples kept</h3></div><span class="pill {% if audit.cleaning.recheck.passed %}pill-mint{% else %}pill-orange{% endif %}">{% if audit.cleaning.recheck.passed %}Re-check passed{% else %}Re-check needs review{% endif %}</span></div>
+  <div class="profile-list">
+    {% for action in audit.cleaning.actions %}
+      <p><span>{{ action.label }}</span><strong>{{ action.removed }} removed · {{ action.handling }}</strong></p>
+    {% endfor %}
+    <p><span>Cleaned-dataset re-check</span><strong>{% for check in audit.cleaning.recheck.checks %}{{ check.name }}: {% if check.passed %}passed{% elif check.severity == 'warning' %}warning{% else %}failed{% endif %}{% if not forloop.last %} · {% endif %}{% endfor %}</strong></p>
+  </div>
+  <p class="panel-copy">The original archive is never modified — the cleaned manifest is what gets split and trained on.</p>
+</div>
+{% endif %}
 <div class="panel">
   <div class="panel-heading"><div><p class="eyebrow">RECOMMENDATION</p><h3>Next best action</h3></div></div>
   <p class="panel-copy">{{ audit.recommendation|default:"Run the dataset audit to generate a recommendation." }}</p>
 </div>
 <div class="panel">
-  <div class="panel-heading"><div><p class="eyebrow">PIPELINE STAGES 0–5</p><h3>Evidence status</h3></div><span class="status status-{{ dataset.status }}">{{ dataset.get_status_display }}</span></div>
+  <div class="panel-heading"><div><p class="eyebrow">PIPELINE STAGES</p><h3>Evidence status</h3></div><span class="status status-{{ dataset.status }}">{{ dataset.get_status_display }}</span></div>
   <div class="workflow-stage-grid dataset-workflow-grid">
     {% for key, status in pipeline.stages.items %}
       <article class="workflow-stage-card workflow-stage-{{ status }}"><h4>{{ key|title }}</h4><p>{{ status|title }}</p></article>

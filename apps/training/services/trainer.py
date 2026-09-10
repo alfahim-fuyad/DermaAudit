@@ -1,5 +1,6 @@
 """CPU training runner for reproducible image-classification experiments."""
 import io
+import math
 import os
 import random
 from copy import deepcopy
@@ -319,6 +320,10 @@ def _evaluate(torch, model, data_loader, labels, class_count):
         auroc = float(roc_auc_score(actual, probabilities, multi_class="ovr", labels=class_labels))
     except ValueError:
         auroc = None
+    if auroc is None or not math.isfinite(auroc):
+        # roc_auc_score can return NaN (instead of raising) when only one
+        # class is present in the evaluated split.
+        auroc = None
     per_class = []
     class_f1 = f1_score(actual, predictions, labels=class_labels, average=None, zero_division=0)
     class_precision = precision_score(actual, predictions, labels=class_labels, average=None, zero_division=0)
@@ -410,7 +415,10 @@ def run_training(run, progress_callback=None):
         raise ValueError("Epochs must be at least 1.")
 
     experiment_variant = run.config.get("experiment_variant", "original")
-    experiment_records = prepare_records(report["records"], experiment_variant)
+    # Unlabelled samples never enter training: they are excluded by the
+    # automatic cleaning rules and cannot map to a class index.
+    usable_records = [record for record in report["records"] if record.get("label")]
+    experiment_records = prepare_records(usable_records, experiment_variant)
     if len({record.get("label") for record in experiment_records}) < 2:
         raise ValueError(
             f"The {experiment_variant.replace('_', ' ')} intervention leaves fewer than two classes."
@@ -434,7 +442,7 @@ def run_training(run, progress_callback=None):
         "load",
         16,
         "Loading image samples",
-        f"Reading {len(report['records']):,} validated images from the archive.",
+        f"Reading {len(usable_records):,} validated images from the archive.",
     )
     train_samples = _read_images(run.dataset, train_records)
     validation_samples = _read_images(run.dataset, validation_records)

@@ -28,6 +28,17 @@ MAX_EPOCHS = 200
 _TRAINING_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="dermaaudit-training")
 
 
+def _json_safe(value):
+    """Replace non-finite floats so config JSON stays valid for strict stores."""
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
+        return None
+    return value
+
+
 def _training_context(split_defaults=None, epochs_default=EPOCHS):
     split_defaults = split_defaults or {
         "train": DEFAULT_SPLIT[0],
@@ -84,7 +95,7 @@ def _complete_training(run_id, manage_connections=True):
         run.status = "completed"
         run.accuracy = result.pop("accuracy")
         run.macro_f1 = result.pop("macro_f1")
-        run.config = {
+        run.config = _json_safe({
             **(run.config or {}),
             **result,
             "execution": "completed",
@@ -94,7 +105,7 @@ def _complete_training(run_id, manage_connections=True):
                 "label": "Training complete",
                 "detail": "Checkpoint saved and ready for prediction.",
             },
-        }
+        })
         run.save(update_fields=["status", "accuracy", "macro_f1", "config"])
     finally:
         if manage_connections:
@@ -114,7 +125,7 @@ def start_training(request):
         dataset = _safe_dataset_lookup(request.POST.get("dataset"))
         architecture = request.POST.get("architecture", "efficientnet_b0")
         valid_architectures = {value for value, _label in TrainingRun.ARCHITECTURES}
-        experiment_variant = request.POST.get("experiment_variant", "original")
+        experiment_variant = request.POST.get("experiment_variant", "fully_audited")
         split_defaults = {
             "train": request.POST.get("train_split", DEFAULT_SPLIT[0]),
             "validation": request.POST.get("validation_split", DEFAULT_SPLIT[1]),
