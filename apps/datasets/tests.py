@@ -519,3 +519,46 @@ class DatasetPipelineCleaningTests(TestCase):
         self.assertContains(response, "Automatic cleaning")
         self.assertContains(response, "Issues found")
         self.assertContains(response, "Cleaned, training-ready dataset")
+
+    def test_audit_view_builds_class_distribution_rows(self):
+        image = _image_bytes()
+        dataset = Dataset.objects.create(
+            name="Class rows",
+            uploaded_file=_zip_file([
+                ("benign/one.png", image),
+                ("benign/duplicate.png", image),
+                ("benign/three.png", _image_bytes("gray")),
+                ("malignant/two.png", _image_bytes("black")),
+            ]),
+        )
+        run_dataset_pipeline(dataset)
+
+        response = self.client.get(reverse("datasets:audit", args=[dataset.pk]))
+
+        rows = {row["label"]: row for row in response.context["cleaning_class_rows"]}
+        self.assertEqual(rows["benign"]["before"], 3)
+        self.assertEqual(rows["benign"]["after"], 2)
+        self.assertEqual(rows["malignant"]["before"], 1)
+        self.assertEqual(rows["malignant"]["after"], 1)
+        self.assertEqual(rows["benign"]["before_percent"], 100)
+        self.assertContains(response, "CLASS DISTRIBUTION · BEFORE VS AFTER CLEANING")
+
+    def test_dataset_list_shows_cleaned_and_issue_columns(self):
+        image = _image_bytes()
+        dataset = Dataset.objects.create(
+            name="List columns",
+            uploaded_file=_zip_file([
+                ("benign/one.png", image),
+                ("benign/duplicate.png", image),
+                ("malignant/two.png", _image_bytes("black")),
+            ]),
+        )
+        run_dataset_pipeline(dataset)
+
+        response = self.client.get(reverse("datasets:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Cleaned")
+        self.assertContains(response, "Issues")
+        self.assertContains(response, "4 issues")
+        self.assertContains(response, "severity-High")
