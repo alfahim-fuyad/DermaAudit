@@ -3,6 +3,7 @@ from django.db import transaction
 
 from .auditor import build_audit
 from .bias import analyze_bias
+from .cleaner import build_cleaning_report
 from .harmonizer import harmonize_labels
 from .imbalance import analyze_imbalance
 from .leakage import analyze_leakage
@@ -18,6 +19,8 @@ DATASET_WORKFLOW_STAGES = (
     ("stage_3", "Stage 3 · Data audit", "Duplicates, quality, labels, metadata, and class distribution"),
     ("stage_4", "Stage 4 · Leakage control", "Group-aware or stratified split recommendation"),
     ("stage_5", "Stage 5 · Bias & imbalance", "Subgroup availability and imbalance handling"),
+    ("cleaning", "Automatic cleaning", "Remove corrupted, duplicate, low-quality, and unlabelled samples"),
+    ("recheck", "Cleaned dataset validation", "Re-check images, labels, and class counts after cleaning"),
 )
 WORKFLOW_VERSION = 1
 
@@ -47,6 +50,9 @@ def run_dataset_pipeline(dataset):
         bias = analyze_bias(profile)
         imbalance = analyze_imbalance(validation.get("class_counts", {}))
         audit = build_audit(validation, profile, leakage, bias, imbalance)
+        cleaning = build_cleaning_report(validation)
+        audit["cleaning"] = cleaning
+        recheck_passed = bool(cleaning.get("recheck", {}).get("passed"))
         configuration = {
             "task": "image_classification",
             "label_column": validation.get("metadata", {}).get("label_column"),
@@ -60,6 +66,8 @@ def run_dataset_pipeline(dataset):
                 "weighted_loss_and_balanced_sampling"
                 if imbalance["severity"] != "Low" else "standard_sampling"
             ),
+            "cleaning_policy": "automatic_cleaning_v1",
+            "cleaned_sample_count": cleaning["kept_count"],
         }
         dataset.sample_count = validation["sample_count"]
         dataset.class_count = len(harmonization["classes"])
@@ -72,9 +80,13 @@ def run_dataset_pipeline(dataset):
         }
         dataset.validation = _public_validation(validation)
         dataset.audit = audit
-        dataset.status = "ready" if validation["valid"] else "needs_review"
+        dataset.status = (
+            "ready" if validation["valid"] and recheck_passed else "needs_review"
+        )
         dataset.pipeline = {
-            "status": "completed" if validation["valid"] else "needs_review",
+            "status": (
+                "completed" if validation["valid"] and recheck_passed else "needs_review"
+            ),
             "workflow_version": WORKFLOW_VERSION,
             "stages": audit["stages"],
             "workflow": {
@@ -109,6 +121,20 @@ def run_dataset_pipeline(dataset):
                 "stage_5": {
                     "status": audit["stages"]["bias"],
                     "summary": f"Bias {bias['status']} · imbalance {imbalance['severity']}",
+                },
+                "cleaning": {
+                    "status": audit["stages"]["cleaning"],
+                    "summary": (
+                        f"Removed {cleaning['removed_count']:,} of {cleaning['audited_images']:,} "
+                        f"image(s) · {cleaning['kept_count']:,} kept"
+                    ),
+                },
+                "recheck": {
+                    "status": "passed" if recheck_passed else "needs_review",
+                    "summary": (
+                        f"{cleaning['kept_count']:,} cleaned sample(s) re-checked · "
+                        f"{len(cleaning['classes_after'])} class(es) survive"
+                    ),
                 },
             },
             "configuration": configuration,
