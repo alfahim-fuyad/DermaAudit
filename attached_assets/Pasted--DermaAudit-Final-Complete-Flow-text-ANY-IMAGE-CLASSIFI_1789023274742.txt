@@ -1,0 +1,147 @@
+## ✅ DermaAudit — Final Complete Flow
+
+```text
+                 ANY IMAGE CLASSIFICATION DATASET
+                              │
+                              ▼
+                    1. DATASET INGESTION
+                    ─────────────────────
+                    • Upload dataset
+                    • Read files / folders
+                              │
+                              ▼
+                 2. DATASET AUTO-DETECTION
+                 ───────────────────────────
+                 • Detect dataset structure
+                 • Detect classes / labels
+                 • Detect image-label mapping
+                              │
+                              ▼
+                        3. DATA AUDIT
+                        ──────────────
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+    FILE / IMAGE         LABEL / DATA       DISTRIBUTION
+       QUALITY              QUALITY             QUALITY
+          │                   │                   │
+    • Corrupted          • Missing labels     • Imbalance
+    • Invalid format     • Unknown labels     • Rare classes
+    • Duplicate          • Label mismatch
+    • Near-duplicate
+    • Low quality
+    • Size issues
+          │                   │                   │
+          └───────────────────┼───────────────────┘
+                              ▼
+                     4. AUDIT REPORT
+                     ────────────────
+                     • Issues found
+                     • Issue count
+                     • Severity
+                     • Recommended action
+                              │
+                              ▼
+                    5. AUTOMATIC CLEANING
+                    ──────────────────────
+                    • Remove corrupted
+                    • Remove duplicates
+                    • Remove invalid files
+                    • Handle missing labels
+                    • Handle unknown files
+                              │
+                              ▼
+                     6. DATASET VALIDATION
+                     ──────────────────────
+                     • Re-check images
+                     • Re-check labels
+                     • Re-check class counts
+                     • Verify readability
+                              │
+                              ▼
+                       7. PREPROCESSING
+                       ─────────────────
+                       • Image path mapping
+                       • Load images
+                       • Resize
+                       • RGB conversion
+                       • Normalize pixels
+                       • Label encoding
+                              │
+                              ▼
+                    8. DATASET SPLITTING
+                    ─────────────────────
+                    Train / Validation / Test
+                              │
+                              ▼
+                  9. TRAINING PREPARATION
+                  ────────────────────────
+                  • Handle class imbalance
+                  • Data augmentation
+                    (Training set only)
+                  • One-hot encoding
+                              │
+                              ▼
+                 ✅ 10. TRAINING-READY DATASET
+                              │
+             ┌────────────────┼────────────────┐
+             ▼                ▼                ▼
+          TRAIN             VALIDATION         TEST
+             │                │                │
+             └────────────────┴────────────────┘
+```
+
+### 🟢 Separate Prediction Module
+
+```text
+                    HAM10000 DATASET
+                           │
+                           ▼
+                    LOCAL TRAINING
+                           │
+                           ▼
+                     SAVED MODEL
+                           │
+                           ▼
+                       WEBSITE
+                           │
+                           ▼
+                  Upload Skin Image
+                           │
+                           ▼
+                     Preprocessing
+                           │
+                           ▼
+                  HAM10000 Model
+                           │
+                           ▼
+                  Disease Prediction
+                           │
+                           ▼
+              Predicted Class + Confidence
+```
+
+### 🎯 পুরো DermaAudit
+
+```text
+                         DERMAAUDIT
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+              ▼                             ▼
+       PART 1: DATA AUDIT             PART 2: PREDICTION
+              │                             │
+      Any Image Dataset                  HAM10000
+              │                             │
+      Audit → Clean →                     Local
+      Preprocess →                    Trained Model
+      Training-Ready                       │
+              │                             │
+              │                          Website
+              │                             │
+              │                         Prediction
+              │
+              └────── Separate Modules ────┘
+```
+
+**এই flow-টাই final রাখো।** Part 1 generic, আর Part 2 specifically HAM10000 prediction—দুটোকে আলাদা রাখলে project-এর scope সবচেয়ে পরিষ্কার হবে।

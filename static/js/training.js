@@ -190,21 +190,21 @@
           if (!response.ok) {
             if (response.status === 404) {
               // Training run no longer exists - treat as failed to stop polling
-              const panels = progressNodes.filter((node) => node.dataset.statusUrl === url && node.matches(\"[data-training-progress]\"));
+              const panels = progressNodes.filter((node) => node.dataset.statusUrl === url && node.matches("[data-training-progress]"));
               panels.forEach((panel) => {
-                panel.classList.add(\"is-failed\");
-                const title = panel.querySelector(\"[data-progress-title]\");
-                if (title) title.textContent = \"Training run not found\";
-                const message = panel.querySelector(\"[data-training-complete-message]\");
+                panel.classList.add("is-failed");
+                const title = panel.querySelector("[data-progress-title]");
+                if (title) title.textContent = "Training run not found";
+                const message = panel.querySelector("[data-training-complete-message]");
                 if (message) {
                   message.hidden = false;
-                  message.textContent = \"Training run not found — it may have been cleared.\";
-                  message.classList.add(\"is-error\");
+                  message.textContent = "Training run not found — it may have been cleared.";
+                  message.classList.add("is-error");
                 }
               });
-              return \"failed\";
+              return "failed";
             }
-            return \"running\";
+            return "running";
           }
           const state = await response.json();
           progressNodes.filter((node) => node.dataset.statusUrl === url).forEach((node) => {
