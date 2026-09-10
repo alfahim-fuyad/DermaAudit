@@ -8,7 +8,13 @@ db.sqlite3
 
 media/datasets/
 media/uploads/
+media/predictions/
+media/xai/
+media/checkpoints/
+!media/.gitkeep
+!media/*/.gitkeep
 
 *.zip
 *.pth
 *.pt
+!**/.gitkeep

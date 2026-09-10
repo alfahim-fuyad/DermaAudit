@@ -40,6 +40,16 @@ def validate_prediction_upload(uploaded_file):
             pass
 
 
+def _is_within_media(media_root, candidate):
+    try:
+        try:
+            return candidate.is_relative_to(media_root)
+        except AttributeError:
+            return media_root in candidate.parents or candidate == media_root
+    except (ValueError, RuntimeError):
+        return False
+
+
 def _latest_checkpoint():
     media_root = Path(settings.MEDIA_ROOT).resolve()
     completed_runs = TrainingRun.objects.filter(
@@ -52,8 +62,11 @@ def _latest_checkpoint():
         checkpoint_name = run.config.get("checkpoint")
         if not checkpoint_name:
             continue
-        checkpoint_path = (media_root / checkpoint_name).resolve()
-        if media_root not in checkpoint_path.parents or not checkpoint_path.is_file():
+        try:
+            checkpoint_path = (media_root / checkpoint_name).resolve()
+        except (ValueError, RuntimeError, OSError):
+            continue
+        if not _is_within_media(media_root, checkpoint_path) or not checkpoint_path.is_file():
             continue
         return run, checkpoint_path
     return None, None
@@ -70,7 +83,7 @@ def _analyze_with_checkpoint(uploaded_file):
     except ImportError as exc:
         raise RuntimeError("PyTorch is required to use a trained checkpoint.") from exc
 
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     classes = checkpoint.get("classes") or []
     preprocessing = checkpoint.get("preprocessing") or {}
     image_size = int(preprocessing.get("image_size", checkpoint.get("image_size", 32)))

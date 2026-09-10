@@ -68,25 +68,37 @@ class TrainingConfigurationViewTests(TestCase):
         self.assertFalse(dataset.training_runs.exists())
 
     def test_completed_run_can_be_selected_for_predictions(self):
-        first = TrainingRun.objects.create(
-            architecture="efficientnet_b0",
-            status="completed",
-            config={"checkpoint": "checkpoints/first.pt"},
-            is_active=True,
-        )
-        second = TrainingRun.objects.create(
-            architecture="mobilenet_v3",
-            status="completed",
-            config={"checkpoint": "checkpoints/second.pt"},
-        )
+        import tempfile
+        from pathlib import Path
+        from django.test import override_settings
 
-        response = self.client.post(reverse("training:activate_model", args=[second.pk]))
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                first_path = Path(media_root) / "checkpoints" / "first.pt"
+                second_path = Path(media_root) / "checkpoints" / "second.pt"
+                first_path.parent.mkdir(parents=True, exist_ok=True)
+                first_path.write_bytes(b"checkpoint")
+                second_path.write_bytes(b"checkpoint")
 
-        self.assertRedirects(response, reverse("training:experiments"))
-        first.refresh_from_db()
-        second.refresh_from_db()
-        self.assertFalse(first.is_active)
-        self.assertTrue(second.is_active)
+                first = TrainingRun.objects.create(
+                    architecture="efficientnet_b0",
+                    status="completed",
+                    config={"checkpoint": "checkpoints/first.pt"},
+                    is_active=True,
+                )
+                second = TrainingRun.objects.create(
+                    architecture="mobilenet_v3",
+                    status="completed",
+                    config={"checkpoint": "checkpoints/second.pt"},
+                )
+
+                response = self.client.post(reverse("training:activate_model", args=[second.pk]))
+
+                self.assertRedirects(response, reverse("training:experiments"))
+                first.refresh_from_db()
+                second.refresh_from_db()
+                self.assertFalse(first.is_active)
+                self.assertTrue(second.is_active)
 
     def test_incomplete_run_cannot_be_selected_for_predictions(self):
         run = TrainingRun.objects.create(

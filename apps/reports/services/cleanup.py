@@ -11,11 +11,19 @@ from apps.training.models import TrainingRun
 def _safe_media_path(relative_name):
     if not relative_name:
         return None
-    media_root = Path(settings.MEDIA_ROOT).resolve()
-    candidate = (media_root / str(relative_name)).resolve()
-    if media_root not in candidate.parents or not candidate.is_file():
+    try:
+        media_root = Path(settings.MEDIA_ROOT).resolve()
+        candidate = (media_root / str(relative_name)).resolve()
+        # Use is_relative_to when available (Python 3.9+), fallback to parents check
+        try:
+            is_inside = candidate.is_relative_to(media_root)
+        except AttributeError:
+            is_inside = media_root in candidate.parents or candidate == media_root
+        if not is_inside or not candidate.is_file():
+            return None
+        return candidate
+    except (ValueError, RuntimeError, OSError):
         return None
-    return candidate
 
 
 def _remove_files(paths):

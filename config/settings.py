@@ -89,18 +89,44 @@ TIME_ZONE = "Asia/Dhaka"
 USE_I18N = True
 USE_TZ = True
 
-# Replit previews submit forms from the proxied HTTPS domain. Trust only the
-# domains supplied by the runtime instead of disabling CSRF protection.
-CSRF_TRUSTED_ORIGINS = []
+# Replit and Arena/E2B previews submit forms from proxied HTTPS domains.
+# Trust the domains supplied by the runtime plus common preview hosts.
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.e2b.app",
+    "http://*.e2b.app",
+    "https://*.e2b.dev",
+    "http://*.e2b.dev",
+    "https://*.arena.ai",
+    "https://*.replit.dev",
+    "https://*.repl.co",
+]
 for _domain in {
     os.environ.get("REPLIT_DEV_DOMAIN", ""),
     *os.environ.get("REPLIT_DOMAINS", "").split(","),
+    os.environ.get("ARENA_PREVIEW_DOMAIN", ""),
+    os.environ.get("E2B_DOMAIN", ""),
 }:
     _domain = _domain.strip()
     if _domain:
         CSRF_TRUSTED_ORIGINS.append(
             _domain if _domain.startswith(("http://", "https://")) else f"https://{_domain}"
         )
+# Deduplicate while preserving order
+_seen = set()
+_deduped = []
+for _origin in CSRF_TRUSTED_ORIGINS:
+    if _origin not in _seen:
+        _seen.add(_origin)
+        _deduped.append(_origin)
+CSRF_TRUSTED_ORIGINS = _deduped
+
+# Allow embedding in Arena's live preview iframe
+X_FRAME_OPTIONS = "ALLOWALL"
+# Improve compatibility with proxied previews
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
