@@ -42,7 +42,7 @@
     <div class="panel-heading"><div><p class="eyebrow">LIVE WORKSPACE PULSE</p><h3>What needs your attention</h3></div><span class="live-badge"><i></i><span data-overview-live-label>Updating live</span></span></div>
     <div class="pulse-signals">
       <div class="pulse-signal"><span class="pulse-signal-icon pulse-blue">◈</span><div><small>ACTIVE TRAINING</small><strong data-overview-active-label>{% if active_training_runs %}{{ active_training_runs|length }} job{{ active_training_runs|length|pluralize }} running{% else %}No active jobs{% endif %}</strong><p data-overview-active-detail>{% if active_training_runs %}{{ active_training_runs.0.get_architecture_display }} · {{ active_training_runs.0.config.progress.label|default:"Preparing" }}{% else %}Start an experiment when your dataset is ready.{% endif %}</p></div></div>
-      <div class="pulse-signal"><span class="pulse-signal-icon pulse-green">✓</span><div><small>DATASET READINESS</small><strong><b data-overview-value="ready_dataset_count">{{ ready_dataset_count }}</b> ready to train</strong><p>Audited datasets can move into model comparison.</p></div></div>
+      <div class="pulse-signal"><span class="pulse-signal-icon pulse-green">✓</span><div><small>DATASET READINESS</small><strong><b data-overview-value="ready_dataset_count">{{ ready_dataset_count }}</b> ready to train</strong><p>{{ cleaned_sample_count }} cleaned, training-ready samples across the workspace.</p></div></div>
       <div class="pulse-signal"><span class="pulse-signal-icon pulse-orange">⊙</span><div><small>LATEST PREDICTION</small><strong data-overview-prediction-label>{% if latest_prediction %}{{ latest_prediction.predicted_class }}{% else %}No prediction yet{% endif %}</strong><p data-overview-prediction-detail>{% if latest_prediction %}{{ latest_prediction.confidence|floatformat:1 }}% confidence · review recommended{% else %}Upload an image to create the first record.{% endif %}</p></div></div>
     </div>
     <div class="overview-live-footer"><span><i></i> <span data-overview-updated>Synced just now</span></span><a class="text-link small" href="{% url 'reports:dashboard' %}">Open live reports →</a></div>
@@ -85,27 +85,27 @@
      <div class="panel-heading"><div><p class="eyebrow">QUICK START GUIDE</p><h3>Six steps to a trustworthy result</h3></div><button class="help-reopen" type="button" id="helpReopen" aria-label="Open tutorial">↗</button></div>
     <div class="help-progress"><span id="helpProgressBar"></span></div>
        <div class="help-step" data-step="1"><span class="help-number">01</span><div><strong>Upload your data</strong><p>Bring a labeled ZIP with class folders, or use CSV/JSON metadata for flat or multi-folder datasets such as HAM10000.</p></div></div>
-     <div class="help-step is-hidden" data-step="2"><span class="help-number">02</span><div><strong>Validate the upload</strong><p>Find unreadable files, missing labels, unsafe paths, unsupported formats, and empty classes before training.</p></div></div>
-     <div class="help-step is-hidden" data-step="3"><span class="help-number">03</span><div><strong>Profile and audit</strong><p>Review image statistics, class balance, exact and near duplicates, metadata, bias readiness, and leakage risk.</p></div></div>
-     <div class="help-step is-hidden" data-step="4"><span class="help-number">04</span><div><strong>Prepare a controlled experiment</strong><p>Use a 70/15/15 split, group-aware IDs when available, and choose an audit intervention without changing the original ZIP.</p></div></div>
+     <div class="help-step is-hidden" data-step="2"><span class="help-number">02</span><div><strong>Auto-detect and audit</strong><p>The pipeline detects structure, classes, and image-label mapping, then reports every issue with a count, severity, and recommended action.</p></div></div>
+     <div class="help-step is-hidden" data-step="3"><span class="help-number">03</span><div><strong>Automatic cleaning and re-check</strong><p>Corrupted, duplicate, low-quality, and unlabelled samples are removed automatically, then the cleaned set is re-checked before it becomes training-ready.</p></div></div>
+     <div class="help-step is-hidden" data-step="4"><span class="help-number">04</span><div><strong>Prepare a controlled experiment</strong><p>Training defaults to the cleaned manifest with a 70/15/15 split, group-aware IDs when available, and imbalance handling.</p></div></div>
      <div class="help-step is-hidden" data-step="5"><span class="help-number">05</span><div><strong>Train and compare</strong><p>Compare held-out Macro-F1, balanced accuracy, per-class results, calibration, and early-stopping evidence.</p></div></div>
-     <div class="help-step is-hidden" data-step="6"><span class="help-number">06</span><div><strong>Register, review, and monitor</strong><p>Activate a checkpoint, inspect confidence and Grad-CAM, abstain when uncertain, and keep verified human review in the loop.</p></div></div>
+     <div class="help-step is-hidden" data-step="6"><span class="help-number">06</span><div><strong>Predict and monitor</strong><p>Use the registered checkpoint — HAM10000 is the flagship use case. Inspect confidence and Grad-CAM, abstain when uncertain, and keep human review in the loop.</p></div></div>
      <div class="help-footer"><span id="helpStepLabel">1 of 6</span><div><button class="button button-outline button-small" type="button" id="helpBack" disabled>Back</button><button class="button button-primary button-small" type="button" id="helpNext">Next step <span>→</span></button></div></div>
   </div>
 </section>
 <section class="two-col-section">
-  <div class="panel"><div class="panel-heading"><div><p class="eyebrow">RESEARCH PIPELINE</p><h3>From data to decision</h3></div><a class="text-link small" href="{% url 'reports:dashboard' %}">View reports →</a></div>
+  <div class="panel"><div class="panel-heading"><div><p class="eyebrow">FINAL FLOW · PART 1 → PART 2</p><h3>From data to decision</h3></div><a class="text-link small" href="{% url 'reports:dashboard' %}">View reports →</a></div>
     <div class="pipeline">
-      <div class="pipeline-step done"><span>01</span><div><strong>Validate & profile</strong><small>Check formats, labels, metadata</small></div><b>✓</b></div>
+      <div class="pipeline-step done"><span>01</span><div><strong>Ingest &amp; auto-detect</strong><small>Structure, classes, image-label mapping</small></div><b>✓</b></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-step"><span>02</span><div><strong>Audit & prepare</strong><small>Find quality, bias, leakage risks</small></div><b>→</b></div>
+      <div class="pipeline-step done"><span>02</span><div><strong>Audit &amp; clean</strong><small>Issues + severity, automatic removal, re-check</small></div><b>✓</b></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-step"><span>03</span><div><strong>Train & compare</strong><small>Evaluate with the same protocol</small></div><b>→</b></div>
+      <div class="pipeline-step"><span>03</span><div><strong>Train &amp; compare</strong><small>Split, prepare, evaluate the cleaned set</small></div><b>→</b></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-step"><span>04</span><div><strong>Explain & monitor</strong><small>Keep humans in the loop</small></div><b>→</b></div>
+      <div class="pipeline-step"><span>04</span><div><strong>Predict &amp; monitor</strong><small>Class + confidence, human review</small></div><b>→</b></div>
     </div>
   </div>
-  <div class="panel active-model-card"><div class="panel-heading"><div><p class="eyebrow">MODEL REGISTRY</p><h3>Active model</h3></div>{% if model_registry %}<span class="live-badge"><i></i> Live</span>{% else %}<span class="model-waiting-badge"><i></i> Waiting</span>{% endif %}</div>
+  <div class="panel active-model-card"><div class="panel-heading"><div><p class="eyebrow">PART 2 · MODEL REGISTRY</p><h3>Active model</h3></div>{% if model_registry %}<span class="live-badge"><i></i> Live</span>{% else %}<span class="model-waiting-badge"><i></i> Waiting</span>{% endif %}</div>
     {% if model_registry %}
     <div class="model-live">
       <div class="model-live-heading"><div class="model-emblem model-emblem-live">✓</div><div><strong>{{ model_registry.run.get_architecture_display }}</strong><small>Completed run #{{ model_registry.run.pk }}</small></div></div>
@@ -157,13 +157,13 @@
     </div>
 
     <div class="modal-tutorial-step">
-      <div class="modal-step-heading"><b>02</b><div><strong>Validate, profile, and audit</strong><small>Open the dataset evidence pipeline after upload.</small></div></div>
-      <p>Review supported formats, readable images, missing labels, dimensions, channels, metadata, exact and near duplicates, class balance, subgroup availability, and possible leakage. Blocking findings keep the dataset out of training.</p>
+      <div class="modal-step-heading"><b>02</b><div><strong>Detect, audit, and clean</strong><small>Open the dataset evidence pipeline after upload.</small></div></div>
+      <p>The audit reports every issue with a count, severity, and recommended action — covering image quality, label quality, and distribution quality. Automatic cleaning then removes corrupted, duplicate, near-duplicate, low-resolution, and unlabelled samples, and the cleaned set is re-checked before the dataset becomes training-ready. The original archive is never modified.</p>
     </div>
 
     <div class="modal-tutorial-step">
       <div class="modal-step-heading"><b>03</b><div><strong>Configure a controlled experiment</strong><small>Go to Model training.</small></div></div>
-      <p>Choose a ready dataset, architecture, split percentages, and intervention. Group IDs produce group-aware splits; otherwise the system uses deterministic class-aware stratification. Augmentation never enters validation or test data.</p>
+      <p>Choose a ready dataset, architecture, split percentages, and intervention — training defaults to the cleaned manifest. Group IDs produce group-aware splits; otherwise the system uses deterministic class-aware stratification. Augmentation never enters validation or test data.</p>
     </div>
 
     <div class="modal-tutorial-step">
@@ -176,7 +176,7 @@
       <p>Upload one image to see the model class, calibrated confidence, top alternatives, and Grad-CAM when available. Low-confidence or close-margin results abstain and recommend qualified expert review. Reports tracks abstentions, queue size, class-mix drift, and the prerequisites for fairness drift.</p>
     </div>
 
-     <div class="modal-support-box"><strong>Supported workflow</strong><span>Detect folders + metadata → Validate → Profile & audit → Train → Predict → Monitor</span></div>
+     <div class="modal-support-box"><strong>Final flow</strong><span>Ingest → Auto-detect → Audit → Clean → Re-check → Train → Predict → Monitor</span></div>
     <a class="button button-primary button-full" href="{% url 'datasets:upload' %}">Begin with a dataset <span>→</span></a>
   </div>
 </div>

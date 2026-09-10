@@ -93,6 +93,7 @@ def validate_upload(upload):
         "duplicate_count": 0,
         "near_duplicate_count": 0,
         "low_quality_count": 0,
+        "unknown_file_count": 0,
         "errors": [],
         "warnings": [],
         "invalid_files": [],
@@ -128,6 +129,7 @@ def validate_upload(upload):
             report["_metadata_rows"] = metadata_rows
             report["warnings"].extend(metadata.get("warnings", []))
             metadata_labels = _metadata_labels(metadata, metadata_rows)
+            known_metadata_files = set(metadata.get("files", [])) | set(metadata.get("additional_files", []))
             seen_hashes = set()
             perceptual_hashes = []
             for info in members:
@@ -136,6 +138,8 @@ def validate_upload(upload):
                     report["errors"].append(f"Unsafe archive path: {info.filename}")
                     continue
                 if path.suffix.lower() not in IMAGE_EXTENSIONS:
+                    if info.filename not in known_metadata_files:
+                        report["unknown_file_count"] += 1
                     continue
                 report["sample_count"] += 1
                 folder_label = _label_for_member(info.filename)
@@ -160,7 +164,10 @@ def validate_upload(upload):
                 if info.file_size > MAX_IMAGE_BYTES:
                     report["invalid_count"] += 1
                     report["invalid_files"].append(info.filename)
-                    report["errors"].append(f"Image is too large: {info.filename}")
+                    # Per-file problems are audit issues handled by automatic
+                    # cleaning: the file is excluded from the cleaned manifest.
+                    if len(report["warnings"]) < 25:
+                        report["warnings"].append(f"Image is too large: {info.filename}")
                     continue
                 try:
                     with archive.open(info) as member:
@@ -222,8 +229,10 @@ def validate_upload(upload):
                     report["invalid_count"] += 1
                     if len(report["invalid_files"]) < 25:
                         report["invalid_files"].append(info.filename)
-                    if len(report["errors"]) < 25:
-                        report["errors"].append(f"Unreadable image {info.filename}: {exc}")
+                    if len(report["warnings"]) < 25:
+                        report["warnings"].append(
+                            f"Unreadable image {info.filename}: {exc} — excluded by automatic cleaning."
+                        )
     except (zipfile.BadZipFile, OSError, ValueError) as exc:
         report["errors"].append(f"Could not read the ZIP archive: {exc}")
     finally:
@@ -243,11 +252,26 @@ def validate_upload(upload):
         report["errors"].append("No supported raster images were found.")
     if report["readable_count"] and len(report["classes"]) < 2:
         report["errors"].append("At least two labelled classes are required.")
+    invalid_fraction = (
+        report["invalid_count"] / report["sample_count"] if report["sample_count"] else 0
+    )
+    if invalid_fraction > 0.25:
+        # Automatic cleaning removes unreadable files, but an archive where
+        # more than a quarter of the images are unreadable looks damaged and
+        # must be reviewed before training.
+        report["errors"].append(
+            f"{round(invalid_fraction * 100)}% of the images could not be read — "
+            "the upload looks damaged and needs review."
+        )
     if report["sample_count"] != report["readable_count"]:
         report["warnings"].append("Some images could not be validated.")
     if report["unlabelled_count"]:
-        report["errors"].append(
-            f"{report['unlabelled_count']:,} readable image(s) do not have a class label."
+        # Missing labels are an audit issue handled by automatic cleaning:
+        # the samples stay in the report but are excluded from the cleaned,
+        # training-ready manifest.
+        report["warnings"].append(
+            f"{report['unlabelled_count']:,} readable image(s) do not have a class "
+            "label — they are excluded by automatic cleaning."
         )
     report["valid"] = bool(
         report["readable_count"]
