@@ -1,4 +1,4 @@
-/* Shared responsive rules are loaded last so every page uses the same layout system. */
+/* Shared responsive rules - loaded last, mobile-first improvements */
 html,body{overflow-x:hidden}
 img{max-width:100%}
 .main-content{min-width:0;overflow-x:hidden}
@@ -9,8 +9,7 @@ img{max-width:100%}
 .training-form form label{display:block;min-width:0}
 .training-form form select{display:block;width:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Premium, accessible select controls. The native menu remains available for
-   keyboard and touch users while the closed control matches the design system. */
+/* Premium select controls */
 .panel label select,
 .training-form form select{
   appearance:none;
@@ -69,8 +68,7 @@ img{max-width:100%}
   font-weight:700;
 }
 
-/* Sidebar rhythm: keep the brand, workspace switcher, and nav on one
-   consistent alignment grid without changing the existing logo asset. */
+/* Sidebar base */
 .sidebar{padding:22px 14px 18px}
 .brand{min-height:76px;height:76px;padding:0 8px;gap:10px;justify-content:flex-start}
 .brand-logo{width:64px;height:64px;flex:0 0 64px}
@@ -86,64 +84,219 @@ img{max-width:100%}
 .nav-bottom{padding-top:24px}
 .sidebar-foot{margin-top:20px;padding:16px 9px 0;gap:10px}
 
+/* Backdrop for mobile sidebar */
+.sidebar-backdrop{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(20,36,51,.32);
+  backdrop-filter:blur(3px);
+  z-index:9;
+}
+.sidebar-backdrop.is-visible{display:block}
+
+/* Tablet & small desktop */
 @media (max-width:1050px){
   .topbar{padding-left:clamp(20px,4vw,44px);padding-right:clamp(20px,4vw,44px)}
   .page-intro{padding-left:clamp(24px,5.2%,44px);padding-right:clamp(24px,5.2%,44px)}
 }
 
 @media (min-width:721px) and (max-width:900px){
-   .overview-live-grid,.overview-insights,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid{grid-template-columns:minmax(0,1fr)!important}
+  .overview-live-grid,.overview-insights,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid{grid-template-columns:minmax(0,1fr)!important}
   .auth-page{grid-template-columns:minmax(0,1fr)!important;max-width:620px;padding-left:28px;padding-right:28px}
   .auth-aside{display:none}
   .metric-grid,.report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .panel{padding:22px}
 }
 
+/* Mobile - 720px and below */
 @media (max-width:720px){
-  .sidebar{width:min(292px,88vw);left:0;transform:translateX(-105%);transition:transform .25s ease;box-shadow:var(--shadow)}
-  .sidebar.open{left:0;transform:translateX(0)}
+  /* Sidebar drawer */
+  .sidebar{
+    position:fixed;
+    z-index:10;
+    top:0;
+    bottom:0;
+    left:0;
+    width:min(292px,88vw);
+    transform:translateX(-105%);
+    transition:transform .28s cubic-bezier(.2,.7,.2,1);
+    box-shadow:0 18px 50px rgba(20,36,51,.18);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .sidebar.open{transform:translateX(0)}
   .main-content{width:100%}
+
+  /* Topbar */
   .topbar{height:64px;gap:10px;padding-left:16px;padding-right:16px}
-  .mobile-menu{display:block;flex:0 0 auto;padding:5px 3px}
+  .mobile-menu{
+    display:flex!important;
+    align-items:center;
+    justify-content:center;
+    width:40px;
+    height:40px;
+    flex:0 0 40px;
+    border:1px solid #e3e9ed;
+    border-radius:10px;
+    background:#fff;
+    font-size:18px;
+    line-height:1;
+  }
   .breadcrumbs{min-width:0;flex:1;gap:7px;font-size:11px;overflow:hidden;white-space:nowrap}
-  .breadcrumbs strong{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .breadcrumbs span,.breadcrumbs b{display:none}
+  .breadcrumbs strong{min-width:0;overflow:hidden;text-overflow:ellipsis;display:block}
   .topbar-actions{flex:0 0 auto;gap:8px}
-  .icon-button{font-size:20px;padding:5px}
-  .page-intro{gap:16px;padding:30px 18px 22px}
+  .icon-button{width:38px;height:38px;font-size:18px}
+  .avatar{width:36px;height:36px}
+
+  /* Page intro */
+  .page-intro{gap:16px;padding:28px 18px 22px;flex-direction:column;align-items:flex-start}
   .page-intro h1{font-size:clamp(26px,8vw,32px);letter-spacing:-1.1px}
-  .subhead{font-size:13px}
+  .subhead{font-size:13px;line-height:1.5}
   .page-intro>.text-link{align-self:flex-start}
-  .stats-grid,.two-col-section,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid,.metric-grid,.report-kpis{grid-template-columns:minmax(0,1fr)!important;margin-left:18px;margin-right:18px}
-  .overview-insights{grid-template-columns:minmax(0,1fr)!important;margin-left:18px;margin-right:18px}
-  .panel{padding:20px}
-  .panel-heading{gap:10px}
-  .panel-heading h3{font-size:14px}
-  .table-panel{overflow-x:auto}
-  .table-panel .panel-heading{padding-left:18px;padding-right:18px}
-  .table-row{padding-left:18px;padding-right:18px}
+  .page-intro-actions,.page-actions,.training-hero-actions{width:100%;flex-wrap:wrap;gap:8px}
+  .page-intro-actions .button,.page-actions .button{flex:1 1 140px;min-height:44px;justify-content:center}
+  .overview-actions{width:100%;flex-wrap:wrap;gap:8px}
+  .overview-actions .button{flex:1 1 140px;min-height:44px;min-width:0;padding-left:12px;padding-right:12px;justify-content:center}
+
+  /* Grids to single column */
+  .stats-grid,.two-col-section,.upload-layout,.training-layout,.prediction-layout,.result-layout,.profile-layout,.audit-grid,.metric-grid,.report-kpis{
+    grid-template-columns:minmax(0,1fr)!important;
+    margin-left:18px;
+    margin-right:18px;
+    gap:12px;
+  }
+  .overview-insights{grid-template-columns:minmax(0,1fr)!important;margin-left:18px;margin-right:18px;gap:12px}
+  .overview-live-grid{grid-template-columns:minmax(0,1fr)!important;margin-left:18px;margin-right:18px;gap:12px}
+  .hero-banner{margin-left:18px;margin-right:18px;border-radius:16px}
   .safety-note,.recommendation,.status-banner,.result-banner{margin-left:18px;margin-right:18px}
-  .safety-note{padding:14px 16px}
-  .hero-banner{margin-left:18px;margin-right:18px}
-  .overview-actions{width:100%;flex-wrap:wrap}
-  .overview-actions .button{min-width:0;flex:1;padding-left:12px;padding-right:12px}
+  .table-panel,.report-live-monitor,.monitoring-panel,.cleanup-panel{margin-left:18px;margin-right:18px}
+  .training-hero-visual{margin-left:18px;margin-right:18px}
+  .upload-tutorial{margin-left:18px;margin-right:18px}
+  .prediction-workflow-strip{margin-left:18px;margin-right:18px}
+
+  .panel{padding:20px;border-radius:14px}
+  .panel-heading{gap:10px;flex-wrap:wrap}
+  .panel-heading h3{font-size:14px;line-height:1.3}
+
+  /* Tables -> cards on mobile */
+  .table-panel{overflow:visible;padding:0;border:0;background:transparent;box-shadow:none}
+  .table-panel .panel-heading{padding:18px 20px;background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
+  .data-table{min-width:0!important;display:grid;gap:10px;padding:0 0 6px}
+  .table-row.table-head{display:none!important}
+  .table-row{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    min-height:0!important;
+    padding:16px!important;
+    background:#fff;
+    border:1px solid #e3e9ed;
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(38,63,88,.04);
+  }
+  .table-row>span{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    font-size:12px;
+    min-width:0;
+  }
+  .table-row>span:before{
+    content:attr(data-label);
+    font:500 9px "DM Mono",monospace;
+    color:#8a99a6;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    flex:0 0 auto;
+  }
+  /* Dataset table specific */
+  .dataset-table-row>span:nth-child(1):before{content:"DATASET"}
+  .dataset-table-row>span:nth-child(2):before{content:"SAMPLES"}
+  .dataset-table-row>span:nth-child(3):before{content:"CLASSES"}
+  .dataset-table-row>span:nth-child(4):before{content:"STATUS"}
+  .dataset-table-row>span:nth-child(5):before{content:"UPDATED"}
+  .dataset-table-row>span:nth-child(6):before{content:"ACTIONS"}
+  .dataset-actions{justify-content:flex-start!important}
+
+  /* Generic fallback labels */
+  .table-row>span:empty{display:none}
+
+  /* Training cards */
+  .training-options{grid-template-columns:1fr 1fr!important;gap:7px}
+  .training-options span{min-width:0;padding:10px}
+  .training-config-grid{grid-template-columns:1fr!important;gap:8px}
+  .training-config-field{min-height:0;padding:14px}
+  .training-config-field input{width:100%!important;max-width:120px}
+  .architecture-card{padding:14px 12px;border-radius:12px}
+  .select-trigger{min-height:52px;padding:0 48px 0 15px;border-radius:13px;font-size:16px!important;letter-spacing:-.1px}
+  .select-menu{top:calc(100% + 7px);max-height:min(300px,46vh);padding:7px;border-radius:14px}
+  .select-option{min-height:48px;padding:11px 12px;font-size:14px;border-radius:10px}
+
+  /* Auth */
   .auth-page{display:block;width:100%;min-height:calc(100vh - 64px);padding:24px 18px}
-  .auth-card{padding:18px 4px}
+  .auth-card{padding:24px 4px;border:0;box-shadow:none;background:transparent}
   .auth-brand{justify-content:center}
   .auth-aside{display:none}
-  .detail-grid{grid-template-columns:minmax(0,1fr)}
-  .training-options{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .training-options span:last-child{grid-column:1/-1;border-right:0;margin-top:12px;padding-top:12px;border-top:1px solid #e1e7ea}
-  .result-image-wrap{height:min(72vw,300px)}
+
+  /* Detail grids */
+  .detail-grid{grid-template-columns:minmax(0,1fr)!important;gap:16px}
+  .result-image-wrap{height:min(72vw,340px)}
+  .result-summary{order:-1}
+  .prediction-dropzone{min-height:200px!important;padding:20px}
+  .dropzone{min-height:200px!important}
+
+  /* Workflow */
+  .workflow-stage-grid{grid-template-columns:1fr 1fr!important;gap:10px}
+  .training-workflow-grid{grid-template-columns:1fr 1fr!important;grid-auto-rows:auto!important}
+  .training-workflow-grid .workflow-stage-card{height:auto;min-height:120px}
+  .audit-grid{grid-template-columns:1fr!important}
+  .audit-progress{margin-left:18px;margin-right:18px}
+  .audit-step{font-size:9px;padding:0 2px}
+  .audit-progress-line{left:7%;right:7%}
+
+  /* Buttons touch target */
+  .button{min-height:44px}
+  .button-small{min-height:36px}
+
+  /* Forms */
+  .panel label input,.panel label select{font-size:16px!important;min-height:48px}
+  .panel label{font-size:12px}
+
+  /* Toast */
+  .toast-stack{left:18px;right:18px;top:72px}
+  .toast{font-size:12px;padding:14px 16px}
+
+  /* Monitoring */
+  .monitoring-facts{grid-template-columns:1fr 1fr!important;gap:10px}
+  .report-kpis{grid-template-columns:1fr 1fr!important}
+
+  /* Prediction */
+  .prediction-intro-meta{align-items:flex-start}
+  .decision-facts{grid-template-columns:1fr 1fr!important}
 }
 
+/* Extra small - 400px */
 @media (max-width:400px){
   .overview-actions{flex-direction:column}
   .overview-actions .button{width:100%;flex:none}
   .topbar-actions .icon-button{display:none}
   .brand-copy{font-size:15px}
   .auth-brand-copy{font-size:18px}
+  .stats-grid{grid-template-columns:1fr!important}
+  .metric-grid,.report-kpis{grid-template-columns:1fr!important}
+  .workflow-stage-grid{grid-template-columns:1fr!important}
+  .training-workflow-grid{grid-template-columns:1fr!important}
+  .training-options{grid-template-columns:1fr!important}
+  .training-options span:last-child{grid-column:auto!important}
+  .monitoring-facts{grid-template-columns:1fr!important}
+  .decision-facts{grid-template-columns:1fr!important}
+  .page-intro h1{font-size:26px}
 }
 
+/* Ensure no horizontal scroll on any screen */
 @media (max-width:720px){
   .panel label select,
   .training-form form select{
@@ -157,6 +310,18 @@ img{max-width:100%}
   .training-form form select:focus-visible{
     outline-offset:1px;
   }
-  .training-options{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  .training-options span:last-child{grid-column:auto;margin-top:0;padding-top:10px;border-top:0}
+}
+
+/* Improve tap targets and spacing for mobile */
+@media (pointer:coarse){
+  .nav-link{min-height:44px}
+  .button{min-height:44px}
+  .select-trigger{min-height:48px}
+}
+
+/* Fix hero scan visual on mobile */
+@media (max-width:720px){
+  .hero-banner{min-height:0!important;display:flex;flex-direction:column}
+  .hero-copy{padding:24px 20px;max-width:none}
+  .hero-graphic{position:relative!important;width:100%!important;height:200px!important;top:auto!important;bottom:auto!important}
 }

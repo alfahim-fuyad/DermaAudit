@@ -39,6 +39,16 @@
 @keyframes notification-pop-in{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
 
 /* Keep the full mark visible and give the external wordmark a stable alignment. */
+.nav-logout-form{width:100%;margin:2px 0}
+.nav-logout-form .nav-link-logout{
+  width:100%;
+  text-align:left;
+  background:none;
+  border:1px solid transparent;
+  cursor:pointer;
+  font-family:inherit;
+}
+.nav-logout-form .nav-link-logout:hover{background:#fff5f2;color:#a94d3d;border-color:#f5dfd8}
 .brand{width:100%;min-height:72px;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;padding:0 10px;border-radius:12px;text-align:left;transition:background-color .2s ease}
 .brand:hover{background:#f7fbff}
 .brand-logo{display:block;width:52px;height:52px;flex:0 0 52px;aspect-ratio:1;border:0;border-radius:0;padding:0;object-fit:contain;object-position:center;background:transparent;filter:drop-shadow(0 5px 8px rgba(42,77,110,.12));transition:transform .25s ease,filter .25s ease}
