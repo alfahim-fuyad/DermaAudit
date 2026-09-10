@@ -33,6 +33,36 @@ PART 2 · SEPARATE PREDICTION MODULE (HAM10000 flagship use case)
 
 It is a research and screening support tool, not a medical diagnostic device.
 
+## Features
+
+- **Any labeled image dataset** — class folders, split folders, flat images with CSV/JSON manifests, or multi-folder archives like HAM10000 with `image_id → dx` metadata mapping
+- **Structured audit report** — every issue listed with its count, severity (High / Medium / Low), and recommended action, grouped into image, label, and distribution quality
+- **Automatic cleaning** — corrupted, duplicate, near-duplicate, low-resolution, and unlabelled samples removed without touching the original archive
+- **Cleaned-dataset re-check** — readability, labels, class count, class coverage, and rare-class warnings gate the Ready status
+- **Leakage-safe splitting** — group-aware splits when patient/entity IDs exist, deterministic stratified splits otherwise
+- **Controlled experiments** — compare interventions against the cleaned manifest with one consistent training protocol
+- **Reliability evidence** — calibration (ECE, Brier), confusion matrix, per-class metrics, early stopping, and versioned checkpoints with full lineage
+- **Separate prediction module** — upload an image, get the predicted class + calibrated confidence, top alternatives, Grad-CAM when supported, and abstention on low confidence
+- **Live monitoring** — workspace pulse, dataset radar, training activity, prediction volume, and abstention/review signals
+
+## The workspace interface
+
+The sidebar mirrors the two-module split:
+
+- **Part 1 · Data audit** — **Datasets** and **Model training**
+- **Part 2 · Prediction** — **New prediction** and **Reports**
+
+Key screens:
+
+| Screen | What you see |
+| --- | --- |
+| **Overview** | Workspace stats, live pulse with the total cleaned training-ready samples, dataset radar, final-flow pipeline strip, and the Part 2 active-model card |
+| **Datasets** | Library table with Samples, **Cleaned**, Classes, **Issues** (count pill colored by highest severity), and status per dataset |
+| **Dataset → Evidence pipeline** | Stage cards (validation → audit → cleaning → re-check), issue table with severity and actions, automatic-cleaning panel with a class-distribution **before/after chart**, and the re-check results |
+| **Model training** | Development path for flow steps 07–12 (Preprocess → Split → Prepare → Train → Evaluate → Register), live run progress, and the experiment form defaulting to the cleaned dataset |
+| **New prediction** | Part 2 flow strip (upload → preprocess → model → class + confidence), active-checkpoint card, and the review-consent notice |
+| **Reports** | Live workspace monitoring, audit and model reports, and the prediction reliability loop |
+
 ## Run on Replit or locally
 
 Install the declared Python dependencies, then run:
@@ -53,7 +83,7 @@ The project uses SQLite when `DATABASE_URL` is not set and PostgreSQL when it is
 
 ## How the workflow works
 
-### 1. Upload and validate
+### 1. Upload and auto-detect (flow steps 1–2)
 
 Upload one `.zip` archive from **Datasets**. The archive may contain:
 
@@ -72,9 +102,9 @@ Upload one `.zip` archive from **Datasets**. The archive may contain:
 
   The scanner recursively finds images in both parts, maps `image_id` to the image filename, and uses `dx` as the class label. Extra tabular exports such as `hmnist_*.csv` are detected and marked unused when the original JPEGs are available.
 
-Before training, the validator checks supported formats, archive safety, readable images, corrupted files, dimensions, color modes, missing labels, class count, duplicate filenames, exact duplicate content, and near-duplicate content. The original archive is never modified, and image-part folders are not mistaken for class labels when metadata is present.
+Detection covers structure, classes, and the image-label mapping. The validator checks supported formats, archive safety, readable images, corrupted files, dimensions, color modes, missing labels, class count, duplicate filenames, exact duplicate content, and near-duplicate content. The original archive is never modified, and image-part folders are not mistaken for class labels when metadata is present.
 
-### 2. Profile, harmonize, and audit
+### 2. Audit report (flow steps 3–4)
 
 The dataset profile records image formats, resolutions, channels, class distribution, metadata files and columns, available IDs, group information, and subgroup fields. Labels are normalized without replacing the original upload.
 
@@ -87,11 +117,9 @@ The audit combines:
 - Group/entity identifiers for leakage control
 - Bias and fairness readiness when approved subgroup metadata exists
 
-The audit report lists every issue with its **count**, **severity** (High / Medium / Low), and a **recommended action**, grouped into file/image quality, label/data quality, and distribution quality.
+The audit report lists every issue with its **count**, **severity** (High / Medium / Low), and a **recommended action**, grouped into file/image quality, label/data quality, and distribution quality. The report is persisted with the dataset and rendered on both the evidence-pipeline page and **Reports → Audit report**.
 
-Datasets with blocking validation errors remain **Needs review** and cannot be used for training.
-
-### 3. Automatic cleaning and re-check
+### 3. Automatic cleaning and re-check (flow steps 5–6)
 
 After the audit, the pipeline automatically cleans the audited records into a training-ready manifest:
 
@@ -104,9 +132,9 @@ After the audit, the pipeline automatically cleans the audited records into a tr
 
 The cleaned manifest is then re-checked: image readability, class labels, class count (at least two), class coverage, and rare-class warnings. A dataset is only **Ready** when validation passes **and** the cleaned-set re-check passes. As a safety guard, an archive where more than 25% of the images are unreadable stays **Needs review**. The original archive is never modified — cleaning produces the manifest used for splitting and training.
 
-### 4. Preprocess, split, and prepare training
+The cleaning panel shows how many samples were removed by each rule and a class-distribution chart comparing counts before and after cleaning.
 
-The default split is **70% train / 15% validation / 15% test**. Training enforces that the values total 100%.
+### 4. Preprocess, split, and prepare training (flow steps 7–10)
 
 The default split is **70% train / 15% validation / 15% test**. Training enforces that the values total 100%.
 
@@ -128,7 +156,7 @@ Each experiment can compare a declared intervention. **Cleaned dataset (recommen
 | Imbalance-handled | Use class-weighted loss |
 | Cleaned dataset (recommended) | The automatically cleaned manifest: duplicates, near-duplicates, low-quality, and unlabelled samples removed |
 
-### 5. Train and evaluate
+### 5. Train and evaluate (uses the step-10 training-ready dataset)
 
 Choose one of the supported architecture profiles—EfficientNet-B0, ResNet-50, or MobileNetV3—and start an experiment from **Model training**. The CPU training runner records:
 
@@ -140,7 +168,7 @@ Choose one of the supported architecture profiles—EfficientNet-B0, ResNet-50, 
 
 The complete run record is available from **Reports → Model report**. Model selection should consider Macro-F1 and minority-class behavior, not accuracy alone.
 
-### 6. Reliability, registry, and prediction (Part 2)
+### 6. Prediction module (Part 2)
 
 Prediction is a **separate module** from the generic audit pipeline. The flagship path trains locally on the HAM10000 skin-lesion dataset through Part 1, registers the saved checkpoint, and then serves skin-image predictions from the website:
 
@@ -184,6 +212,8 @@ Run the Django system check and test suite:
 python manage.py check
 python manage.py test
 ```
+
+The suite covers the validator, audit issue list, cleaning rules and re-check, pipeline persistence, training preparation, and the view-level panels (issues, cleaning, class-distribution rows, and the dataset library columns).
 
 ## Technology
 
