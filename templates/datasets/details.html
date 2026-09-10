@@ -19,8 +19,8 @@
 <div class="status-banner">
   <span class="status-icon">{% if dataset.status == "ready" %}✓{% else %}!{% endif %}</span>
   <div>
-    {% if dataset.status == "ready" %}<strong>Dataset validated</strong><p>Audit, automatic cleaning, and the cleaned-dataset re-check completed — this dataset can be used for a controlled experiment.</p>
-    {% elif dataset.status == "needs_review" %}<strong>Review required</strong><p>Validation, audit, or cleaning findings must be resolved before this dataset can be used for training.</p>
+    {% if dataset.status == "ready" %}<strong>Dataset validated</strong><p>Stages 0–5 completed and this dataset can be used for a controlled experiment.</p>
+    {% elif dataset.status == "needs_review" %}<strong>Review required</strong><p>Validation or audit findings must be resolved before this dataset can be used for training.</p>
     {% else %}<strong>Dataset received</strong><p>This dataset is in the automated evidence pipeline.</p>{% endif %}
   </div>
   <b class="status status-{{ dataset.status }}">{{ dataset.get_status_display }}</b>
@@ -28,8 +28,8 @@
 
 <div class="metric-grid">
   <div class="metric-card"><small>IMAGE SAMPLES</small><strong>{{ dataset.sample_count|default:"—" }}</strong><span>Detected in upload</span></div>
-  <div class="metric-card"><small>CLEANED SAMPLES</small><strong>{{ dataset.pipeline.configuration.cleaned_sample_count|default:"—" }}</strong><span>Kept after automatic cleaning</span></div>
   <div class="metric-card"><small>CLASSES</small><strong>{{ dataset.class_count|default:"—" }}</strong><span>{% for item in dataset.classes|slice:":3" %}{{ item }}{% if not forloop.last %}, {% endif %}{% empty %}Pending audit{% endfor %}</span></div>
+  <div class="metric-card"><small>FORMATS</small><strong>{{ dataset.profile.formats|default:"—" }}</strong><span>Image formats</span></div>
   <div class="metric-card"><small>GROUP POLICY</small><strong>{{ dataset.pipeline.configuration.split_policy|default:"Pending" }}</strong><span>Leakage control</span></div>
 </div>
 
@@ -46,8 +46,8 @@
     </div>
   </div>
   <div class="panel">
-    <div class="panel-heading"><div><p class="eyebrow">NEXT STEP</p><h3>Workflow readiness</h3></div><span class="readiness-circle">{% if dataset.status == "ready" %}✓{% else %}…{% endif %}</span></div>
-    <p class="panel-copy">The pipeline validates, audits, automatically cleans, and re-checks the dataset. Launch a reproducible experiment from the cleaned, training-ready manifest using the generated split and imbalance policy.</p>
+    <div class="panel-heading"><div><p class="eyebrow">NEXT STEP</p><h3>Workflow readiness</h3></div><span class="readiness-circle">{% if dataset.status == "ready" %}6/6{% else %}0/6{% endif %}</span></div>
+    <p class="panel-copy">Review each evidence stage, then launch a reproducible experiment using the generated split and imbalance policy.</p>
     <a class="button button-outline" href="{% url 'datasets:audit' dataset.pk %}">Open evidence pipeline</a>
   </div>
 </div>

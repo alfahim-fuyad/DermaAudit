@@ -40,12 +40,9 @@ EXPERIMENT_VARIANTS = (
     },
     {
         "key": "fully_audited",
-        "label": "Cleaned dataset (recommended)",
-        "intervention": "Automatic cleaning applied",
-        "description": (
-            "Train on the automatically cleaned manifest: corrupted, duplicate, "
-            "near-duplicate, low-quality, and unlabelled samples removed."
-        ),
+        "label": "Fully audited",
+        "intervention": "All available safeguards",
+        "description": "Use the dataset configuration produced by the complete audit.",
     },
 )
 
@@ -64,14 +61,11 @@ def prepare_records(records, variant):
             if not record.get("low_quality")
         ]
     if variant == "fully_audited":
-        # Mirrors the automatic cleaning rules applied by the dataset pipeline
-        # (apps.datasets.services.cleaner.clean_records).
         return [
             record for record in records
             if not record.get("duplicate")
             and not record.get("near_duplicate")
             and not record.get("low_quality")
-            and record.get("label")
         ]
     return records
 
