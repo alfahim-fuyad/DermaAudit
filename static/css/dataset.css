@@ -31,8 +31,7 @@
 .upload-progress.is-error .upload-progress-ring span{color:#b96945}
 @keyframes upload-progress-pulse{0%,100%{box-shadow:0 0 0 0 rgba(47,120,238,.08)}50%{box-shadow:0 0 0 7px rgba(47,120,238,.1)}}
 .table-row:not(.table-head):hover{background:#fbfcfe}
-.dataset-table-row{grid-template-columns:2.1fr .9fr .9fr .8fr 1.1fr 1.1fr 1fr 1.15fr}
-.dataset-table{min-width:900px}
+.dataset-table-row{grid-template-columns:2.1fr 1fr 1fr 1.1fr 1.25fr 1.2fr}
 .dataset-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
 .dataset-delete-form{margin:0}
 .table-action{border:0;background:none;color:var(--blue);font-size:10px;font-weight:800;padding:6px 4px}
@@ -146,21 +145,3 @@
 .recheck-row small{color:var(--muted);font-size:10px;display:block;margin-top:2px}
 .cleaning-note{margin:14px 25px 0;color:var(--muted);font-size:10px}
 @media(max-width:720px){.issue-row{grid-template-columns:1.4fr .6fr 1fr;row-gap:6px}.issue-row .issue-action{grid-column:1/-1}.cleaning-stats{grid-template-columns:repeat(2,1fr);padding:0 18px 14px}.cleaning-actions,.cleaning-recheck{margin-left:18px;margin-right:18px}.cleaning-note{margin:12px 18px 0}}
-
-/* Class distribution before/after cleaning */
-.cleaning-classes{margin:18px 25px 0;padding:16px 18px;border:1px solid #e3eaf0;border-radius:11px;background:#fbfcfe}
-.cleaning-classes-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
-.cleaning-classes-head .eyebrow{margin:0}
-.class-bar-legend{display:inline-flex;align-items:center;gap:6px;font:9px "DM Mono",monospace;color:#8a98a3}
-.class-bar-legend i{display:inline-block;width:14px;height:8px;border-radius:4px}
-.class-bar-legend-before{background:#c9d7e4}
-.class-bar-legend-after{background:#5ec49a;margin-left:6px}
-.class-bar-row{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid #edf1f3}
-.class-bar-row:last-child{border-bottom:0}
-.class-bar-label{font:11px "DM Mono",monospace;color:#42525f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.class-bar-tracks{display:grid;gap:5px}
-.class-bar-track{display:flex;align-items:center;gap:8px}
-.class-bar-track i{display:block;height:9px;border-radius:5px;background:#c9d7e4;min-width:2px;transition:width .4s ease}
-.class-bar-after i{background:#5ec49a}
-.class-bar-track b{font:10px "DM Mono",monospace;color:#7b8a95;min-width:28px}
-@media(max-width:720px){.cleaning-classes{margin:12px 18px 0}.class-bar-row{grid-template-columns:86px 1fr}}

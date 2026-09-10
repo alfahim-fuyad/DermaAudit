@@ -122,23 +122,6 @@
       </div>
     {% endfor %}
   </div>
-  {% if cleaning_class_rows %}
-  <div class="cleaning-classes">
-    <div class="cleaning-classes-head">
-      <p class="eyebrow">CLASS DISTRIBUTION · BEFORE VS AFTER CLEANING</p>
-      <span class="class-bar-legend"><i class="class-bar-legend-before"></i>Before <i class="class-bar-legend-after"></i>After</span>
-    </div>
-    {% for row in cleaning_class_rows %}
-      <div class="class-bar-row">
-        <span class="class-bar-label" title="{{ row.label }}">{{ row.label }}</span>
-        <div class="class-bar-tracks">
-          <div class="class-bar-track"><i style="width:{{ row.before_percent }}%"></i><b>{{ row.before }}</b></div>
-          <div class="class-bar-track class-bar-after"><i style="width:{{ row.after_percent }}%"></i><b>{{ row.after }}</b></div>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-  {% endif %}
   <div class="cleaning-recheck">
     <p class="eyebrow">CLEANED DATASET VALIDATION</p>
     {% for check in cleaning.recheck.checks %}

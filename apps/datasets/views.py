@@ -81,22 +81,6 @@ def dataset_audit(request, pk):
     audit = dataset.audit or {"duplicate_rate": "Pending", "quality_score": "—", "leakage_risk": "Not audited",
                               "label_consistency": "Pending", "imbalance_ratio": "Pending",
                               "recommendation": "Run an audit to generate recommendations."}
-    cleaning = audit.get("cleaning") or None
-    cleaning_class_rows = None
-    if cleaning:
-        counts_before = cleaning.get("class_counts_before") or {}
-        counts_after = cleaning.get("class_counts_after") or {}
-        max_count = max([*counts_before.values(), *counts_after.values(), 1])
-        cleaning_class_rows = [
-            {
-                "label": label,
-                "before": count,
-                "after": counts_after.get(label, 0),
-                "before_percent": round((count / max_count) * 100),
-                "after_percent": round((counts_after.get(label, 0) / max_count) * 100),
-            }
-            for label, count in sorted(counts_before.items())
-        ]
     stages = audit.get("stages", {})
     pipeline_workflow = (dataset.pipeline or {}).get("workflow", {})
     has_stage = lambda key, fallback: (
@@ -136,8 +120,7 @@ def dataset_audit(request, pk):
     return render(request, "datasets/audit.html", {
         "dataset": dataset,
         "audit": audit,
-        "cleaning": cleaning,
-        "cleaning_class_rows": cleaning_class_rows,
+        "cleaning": audit.get("cleaning") or None,
         "progress": progress,
         "current_step": current_step,
         "progress_percent": progress_percent,
