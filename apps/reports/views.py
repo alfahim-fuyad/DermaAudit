@@ -30,8 +30,18 @@ def _data_drift(predictions, active_model):
         }
 
     reference_total = sum(float(value or 0) for value in reference.values())
+    if reference_total <= 0:
+        return {
+            "status": "not_available",
+            "detail": "Training reference distribution is empty; cannot compute drift.",
+        }
     observed_counts = Counter(prediction.predicted_class for prediction in predictions)
     observed_total = len(predictions)
+    if observed_total <= 0:
+        return {
+            "status": "not_available",
+            "detail": "No predictions available for drift comparison.",
+        }
     labels = set(reference) | set(observed_counts)
     shifts = {
         label: round(
@@ -153,7 +163,7 @@ def live_status(request):
     datasets = list(Dataset.objects.all())
     runs = list(TrainingRun.objects.select_related("dataset").order_by("-created_at"))
     predictions = list(Prediction.objects.all().order_by("-created_at"))
-    predictions_count = Prediction.objects.count()
+    predictions_count = len(predictions)
     completed_runs = [run for run in runs if run.status == "completed"]
     active_runs = [run for run in runs if run.status == "running"]
     audited_count = sum(1 for dataset in datasets if dataset.audit)
@@ -161,7 +171,7 @@ def live_status(request):
     best_run = max(completed_runs, key=lambda run: run.accuracy, default=None)
     active_model = next((run for run in completed_runs if run.is_active), None)
     abstained = sum(
-        1 for prediction in Prediction.objects.all()
+        1 for prediction in predictions
         if (prediction.explanation or {}).get("decision") == "abstain"
     )
     average_confidence = (

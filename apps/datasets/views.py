@@ -98,7 +98,8 @@ def dataset_audit(request, pk):
         ),
     }
     completed_steps = sum(progress.values())
-    progress_percent = {0: 0, 1: 0, 2: 33, 3: 66, 4: 100}[completed_steps]
+    # Fixed mapping: 0->0, 1->25, 2->50, 3->75, 4->100 for accurate progress bar
+    progress_percent = {0: 0, 1: 25, 2: 50, 3: 75, 4: 100}.get(completed_steps, 0)
     if progress["ready"]:
         current_step = "ready"
     elif progress["leakage"]:

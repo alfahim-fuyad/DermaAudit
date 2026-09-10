@@ -101,9 +101,17 @@ def _complete_training(run_id, manage_connections=True):
             close_old_connections()
 
 
+def _safe_dataset_lookup(dataset_id):
+    try:
+        pk = int(dataset_id)
+    except (TypeError, ValueError):
+        return None
+    return Dataset.objects.filter(pk=pk, status="ready").first()
+
+
 def start_training(request):
     if request.method == "POST":
-        dataset = Dataset.objects.filter(pk=request.POST.get("dataset"), status="ready").first()
+        dataset = _safe_dataset_lookup(request.POST.get("dataset"))
         architecture = request.POST.get("architecture", "efficientnet_b0")
         valid_architectures = {value for value, _label in TrainingRun.ARCHITECTURES}
         experiment_variant = request.POST.get("experiment_variant", "original")
@@ -202,6 +210,16 @@ def experiments(request):
     )
 
 
+def _is_within_media(media_root, candidate):
+    try:
+        try:
+            return candidate.is_relative_to(media_root)
+        except AttributeError:
+            return media_root in candidate.parents or candidate == media_root
+    except (ValueError, RuntimeError):
+        return False
+
+
 def activate_model(request, pk):
     if request.method != "POST":
         from django.http import HttpResponseNotAllowed
@@ -212,12 +230,19 @@ def activate_model(request, pk):
     checkpoint_path = None
     if checkpoint_name:
         from pathlib import Path
-        checkpoint_path = (Path(settings.MEDIA_ROOT) / checkpoint_name).resolve()
+        try:
+            media_root = Path(settings.MEDIA_ROOT).resolve()
+            checkpoint_path = (media_root / checkpoint_name).resolve()
+        except (ValueError, RuntimeError, OSError):
+            checkpoint_path = None
+    else:
+        media_root = None
     if (
         run.status != "completed"
         or not checkpoint_name
         or not checkpoint_path
-        or Path(settings.MEDIA_ROOT).resolve() not in checkpoint_path.parents
+        or not _is_within_media(media_root, checkpoint_path)
+        or not checkpoint_path.is_file()
     ):
         messages.error(request, "Only a completed run with a saved checkpoint can be used for predictions.")
         return redirect("training:experiments")

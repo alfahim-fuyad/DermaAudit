@@ -1,11 +1,12 @@
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 from apps.datasets.models import Dataset
 from apps.datasets.services.radar import build_radar_data
 from apps.prediction.models import Prediction
@@ -197,3 +198,15 @@ def register_view(request):
 def profile_view(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
     return render(request, "accounts/profile.html", {"profile": profile, "page_title": "Profile"})
+
+
+@require_http_methods(["GET", "POST"])
+def logout_view(request):
+    """Allow both GET and POST for logout to support Django 5.2+ where LogoutView requires POST.
+
+    The template uses a POST form, but we also handle GET for backwards compatibility
+    and for cases where a user follows a direct logout link.
+    """
+    logout(request)
+    messages.success(request, "You have been signed out.")
+    return redirect("accounts:login")
