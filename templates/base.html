@@ -41,14 +41,8 @@
       <nav class="nav-group">
         <p class="nav-label">Workspace</p>
         <a class="nav-link {% if request.path == '/' or request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'home' %}active{% endif %}" href="/"><span class="nav-icon">⌂</span> Overview</a>
-      </nav>
-      <nav class="nav-group">
-        <p class="nav-label">Part 1 · Data audit</p>
         <a class="nav-link {% if request.resolver_match.app_name == 'datasets' %}active{% endif %}" href="{% url 'datasets:list' %}"><span class="nav-icon">▦</span> Datasets</a>
         <a class="nav-link {% if request.resolver_match.app_name == 'training' %}active{% endif %}" href="{% url 'training:home' %}"><span class="nav-icon">◈</span> Model training</a>
-      </nav>
-      <nav class="nav-group">
-        <p class="nav-label">Part 2 · Prediction</p>
         <a class="nav-link {% if request.resolver_match.app_name == 'prediction' %}active{% endif %}" href="{% url 'prediction:predict' %}"><span class="nav-icon">⊙</span> New prediction</a>
         <a class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}" href="{% url 'reports:dashboard' %}"><span class="nav-icon">▥</span> Reports</a>
       </nav>

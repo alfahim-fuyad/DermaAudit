@@ -6,7 +6,7 @@
   <div class="training-hero-copy">
     <p class="eyebrow">MODEL DEVELOPMENT</p>
     <h1>Model training</h1>
-    <p class="subhead">Train on the cleaned, training-ready dataset and compare architectures with one consistent protocol.</p>
+    <p class="subhead">Compare architectures with one consistent evaluation protocol.</p>
   </div>
   <div class="training-hero-actions">
     <span class="training-protocol"><i></i><span>Reproducible protocol</span></span>
@@ -16,16 +16,16 @@
   </div>
 </section>
 
-<div class="training-hero-visual" role="img" aria-label="Model development path from the cleaned dataset to a registered checkpoint">
-  <div class="training-hero-visual-top"><span>DEVELOPMENT PATH</span><b>FLOW STEPS 07 → 12</b></div>
+<div class="training-hero-visual" role="img" aria-label="Animated model development path from experiments to model store">
+  <div class="training-hero-visual-top"><span>DEVELOPMENT PATH</span><b>STAGE 06 → 11</b></div>
   <div class="training-path">
     <span class="training-path-line" aria-hidden="true"><i></i></span>
-    <span class="training-path-step"><b>07</b><small>Preprocess</small></span>
-    <span class="training-path-step"><b>08</b><small>Split</small></span>
-    <span class="training-path-step"><b>09</b><small>Prepare</small></span>
-    <span class="training-path-step"><b>10</b><small>Train</small></span>
-    <span class="training-path-step"><b>11</b><small>Evaluate</small></span>
-    <span class="training-path-step"><b>12</b><small>Register</small></span>
+    <span class="training-path-step"><b>06</b><small>Experiments</small></span>
+    <span class="training-path-step"><b>07</b><small>Modeling</small></span>
+    <span class="training-path-step"><b>08</b><small>Evaluation</small></span>
+    <span class="training-path-step"><b>09</b><small>Reliability</small></span>
+    <span class="training-path-step"><b>10</b><small>XAI</small></span>
+    <span class="training-path-step"><b>11</b><small>Model store</small></span>
   </div>
 </div>
 
@@ -99,7 +99,7 @@
         <span>Dataset intervention <small>Controlled comparison</small></span>
         <select name="experiment_variant">
           {% for variant in experiment_variants %}
-            <option value="{{ variant.key }}"{% if variant.key == 'fully_audited' %} selected{% endif %}>{{ variant.label }} · {{ variant.intervention }}</option>
+            <option value="{{ variant.key }}">{{ variant.label }} · {{ variant.intervention }}</option>
           {% endfor %}
         </select>
         <small class="field-help">The original upload stays unchanged; only the selected training candidate is adjusted.</small>

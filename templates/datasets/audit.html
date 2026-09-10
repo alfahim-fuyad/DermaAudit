@@ -5,7 +5,7 @@
   <div>
     <p class="eyebrow">DATASET / AUDIT WORKFLOW</p>
     <h1>Evidence pipeline</h1>
-    <p class="subhead">{{ dataset.name }} · Validation, audit, automatic cleaning, and cleaned-dataset re-check.</p>
+    <p class="subhead">{{ dataset.name }} · Validation, harmonization, leakage control, and bias readiness.</p>
   </div>
   <div class="page-intro-actions"><a class="text-link" href="{{ dataset.get_absolute_url }}">← Dataset profile</a>{% if dataset.audit %}<a class="text-link" href="{% url 'reports:audit_report' dataset.pk %}">Full report →</a>{% endif %}</div>
 </section>
@@ -13,7 +13,7 @@
 <section class="panel workflow-overview">
   <div class="panel-heading">
     <div>
-      <p class="eyebrow">AUTOMATED PIPELINE</p>
+      <p class="eyebrow">STAGES 0–5</p>
       <h3>Dataset evidence chain</h3>
     </div>
     <span class="pill {% if dataset.status == 'ready' %}pill-mint{% else %}pill-orange{% endif %}">{{ dataset.get_status_display }}</span>
@@ -40,8 +40,7 @@
   <div class="audit-step {% if progress.profile %}completed{% elif current_step == 'profile' %}active{% endif %}"><b>1</b>Profile</div>
   <div class="audit-step {% if progress.quality %}completed{% elif current_step == 'quality' %}active{% endif %}"><b>2</b>Quality</div>
   <div class="audit-step {% if progress.leakage %}completed{% elif current_step == 'leakage' %}active{% endif %}"><b>3</b>Leakage</div>
-  <div class="audit-step {% if progress.cleaned %}completed{% elif current_step == 'cleaned' %}active{% endif %}"><b>4</b>Cleaned</div>
-  <div class="audit-step {% if progress.ready %}completed{% elif current_step == 'ready' %}active{% endif %}"><b>5</b>Ready</div>
+  <div class="audit-step {% if progress.ready %}completed{% elif current_step == 'ready' %}active{% endif %}"><b>4</b>Ready</div>
 </div>
 
 <div class="audit-grid">
@@ -69,91 +68,6 @@
     </div>
   </div>
 </div>
-
-<section class="panel table-panel issues-panel">
-  <div class="panel-heading">
-    <div>
-      <p class="eyebrow">AUDIT REPORT</p>
-      <h3>Issues found · {{ audit.issue_count|default:"0" }} issue(s)</h3>
-    </div>
-    <span class="pill {% if audit.highest_severity == 'High' %}pill-high{% elif audit.highest_severity == 'Medium' %}pill-orange{% else %}pill-mint{% endif %}">Highest severity · {{ audit.highest_severity|default:"None" }}</span>
-  </div>
-  {% if audit.issues %}
-  <div class="issue-table">
-    <div class="issue-row issue-head"><span>Issue</span><span>Count</span><span>Severity</span><span>Recommended action</span></div>
-    {% for issue in audit.issues %}
-      <div class="issue-row{% if issue.severity == 'None' %} issue-pass{% endif %}">
-        <div class="issue-name"><strong>{{ issue.title }}</strong><small>{{ issue.detail }}</small></div>
-        <b>{{ issue.count }}</b>
-        <span class="pill severity-{{ issue.severity|default:'None' }}">{{ issue.severity|default:"None" }}</span>
-        <small class="issue-action">{{ issue.action }}</small>
-      </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <p class="empty-inline">Run the audit to generate the issue list, severity, and recommended actions.</p>
-  {% endif %}
-</section>
-
-<section class="panel table-panel cleaning-panel">
-  <div class="panel-heading">
-    <div>
-      <p class="eyebrow">AUTOMATIC CLEANING</p>
-      <h3>Cleaned, training-ready dataset</h3>
-    </div>
-    {% if cleaning %}
-      <span class="pill {% if cleaning.recheck.passed %}pill-mint{% else %}pill-orange{% endif %}">
-        {% if cleaning.recheck.passed %}Re-check passed{% else %}Re-check needs review{% endif %}
-      </span>
-    {% endif %}
-  </div>
-  {% if cleaning %}
-  <div class="cleaning-stats">
-    <div><small>AUDITED IMAGES</small><strong>{{ cleaning.audited_images }}</strong></div>
-    <div><small>REMOVED</small><strong>{{ cleaning.removed_count }} <em>{{ cleaning.removal_rate }}%</em></strong></div>
-    <div><small>KEPT (TRAINING-READY)</small><strong>{{ cleaning.kept_count }} <em>{{ cleaning.kept_rate }}%</em></strong></div>
-    <div><small>CLASSES AFTER CLEANING</small><strong>{{ cleaning.classes_after|length }}</strong></div>
-  </div>
-  <div class="cleaning-actions">
-    {% for action in cleaning.actions %}
-      <div class="cleaning-action{% if not action.removed %} cleaning-action-pass{% endif %}">
-        <div><strong>{{ action.label }}</strong><small>{{ action.handling }}</small></div>
-        <b>{{ action.removed }} removed</b>
-      </div>
-    {% endfor %}
-  </div>
-  {% if cleaning_class_rows %}
-  <div class="cleaning-classes">
-    <div class="cleaning-classes-head">
-      <p class="eyebrow">CLASS DISTRIBUTION · BEFORE VS AFTER CLEANING</p>
-      <span class="class-bar-legend"><i class="class-bar-legend-before"></i>Before <i class="class-bar-legend-after"></i>After</span>
-    </div>
-    {% for row in cleaning_class_rows %}
-      <div class="class-bar-row">
-        <span class="class-bar-label" title="{{ row.label }}">{{ row.label }}</span>
-        <div class="class-bar-tracks">
-          <div class="class-bar-track"><i style="width:{{ row.before_percent }}%"></i><b>{{ row.before }}</b></div>
-          <div class="class-bar-track class-bar-after"><i style="width:{{ row.after_percent }}%"></i><b>{{ row.after }}</b></div>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-  <div class="cleaning-recheck">
-    <p class="eyebrow">CLEANED DATASET VALIDATION</p>
-    {% for check in cleaning.recheck.checks %}
-      <div class="recheck-row">
-        <span class="check-icon">{% if check.passed %}✓{% else %}{% if check.severity == 'warning' %}!{% else %}✕{% endif %}{% endif %}</span>
-        <p><strong>{{ check.name }}</strong><small>{{ check.detail }}</small></p>
-        <span class="pill {% if check.passed %}pill-mint{% elif check.severity == 'warning' %}pill-orange{% else %}pill-high{% endif %}">{% if check.passed %}Passed{% elif check.severity == 'warning' %}Warning{% else %}Failed{% endif %}</span>
-      </div>
-    {% endfor %}
-  </div>
-  <p class="cleaning-note">The original archive is never modified — cleaning produces the manifest used for splitting and training.</p>
-  {% else %}
-  <p class="empty-inline">Automatic cleaning runs as part of the audit pipeline. Run the full audit to clean this dataset.</p>
-  {% endif %}
-</section>
 
 <section class="panel workflow-configuration">
   <div class="panel-heading">

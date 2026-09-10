@@ -20,11 +20,11 @@
          <div class="upload-progress-copy"><strong data-upload-label>Uploading dataset</strong><small data-upload-detail>Preparing the ZIP for secure upload.</small></div>
        </div>
        <div class="upload-guidance"><span>ⓘ</span><div><strong>What can I upload?</strong><p>Upload one ZIP with class folders, optional train/validation/test folders, or images in multiple folders paired with CSV/JSON metadata. DermaAudit automatically maps image IDs to labels such as HAM10000's <code>image_id</code> → <code>dx</code>. JPG, PNG, WEBP, BMP, GIF, JFIF, and TIFF are supported.</p></div></div>
-      <button class="button button-primary button-full">Upload and audit <span>→</span></button>
+      <button class="button button-primary button-full">Upload and profile <span>→</span></button>
     </form>
   </div>
   <div class="upload-side">
-    <div class="panel"><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What happens next?</h3><div class="mini-timeline"><p><b>01</b><span><strong>Auto-detect</strong><small>Structure, classes, image-label mapping</small></span></p><p><b>02</b><span><strong>Audit</strong><small>Issues with count, severity, action</small></span></p><p><b>03</b><span><strong>Clean</strong><small>Remove corrupted, duplicate, unlabelled</small></span></p><p><b>04</b><span><strong>Re-check</strong><small>Validate the cleaned dataset</small></span></p><p><b>05</b><span><strong>Ready</strong><small>Training-ready manifest</small></span></p></div></div>
+    <div class="panel"><p class="eyebrow">AUTOMATIC PIPELINE</p><h3>What happens next?</h3><div class="mini-timeline"><p><b>01</b><span><strong>Validate</strong><small>Format, image, and label checks</small></span></p><p><b>02</b><span><strong>Profile</strong><small>Classes, sizes, channels, metadata</small></span></p><p><b>03</b><span><strong>Audit</strong><small>Quality, duplicates, leakage, bias</small></span></p></div></div>
     <div class="scope-callout"><span>✦</span><p><strong>Compatible datasets only</strong><br>DermaAudit supports labeled image-classification tasks across domains, not arbitrary files.</p></div>
   </div>
 </div>
@@ -114,13 +114,13 @@ ISIC_0030000,nv</code></div>
     <div class="workflow-steps">
       <p><b>1</b><span><strong>Organize</strong><small>Put each image under its class folder, or prepare labels.csv/labels.json.</small></span></p>
       <p><b>2</b><span><strong>Compress</strong><small>Right-click the top-level <code>my_dataset</code> folder and choose Compress/Send to ZIP.</small></span></p>
-      <p><b>3</b><span><strong>Upload and audit</strong><small>Enter a dataset name, choose the ZIP, then click Upload and audit.</small></span></p>
-      <p><b>4</b><span><strong>Review audit and cleaning</strong><small>Check issues by severity, removals, and the cleaned dataset re-check.</small></span></p>
-      <p><b>5</b><span><strong>Train a model</strong><small>Open Model training — the cleaned dataset is the default training candidate.</small></span></p>
+      <p><b>3</b><span><strong>Upload and profile</strong><small>Enter a dataset name, choose the ZIP, then click Upload and profile.</small></span></p>
+      <p><b>4</b><span><strong>Review the audit</strong><small>Check classes, unreadable files, duplicates, image quality, and label balance.</small></span></p>
+      <p><b>5</b><span><strong>Train a model</strong><small>Open Model training, select the ready dataset, and start an experiment.</small></span></p>
       <p><b>6</b><span><strong>Predict and compare</strong><small>Upload a new image from New prediction; review confidence, alternatives, and Reports.</small></span></p>
     </div>
   </div>
 
-  <div class="tutorial-warning"><span>ⓘ</span><p><strong>What does not work?</strong> A ZIP containing only loose images, a ZIP with just one class, a non-ZIP upload, or an image folder with no labels. Corrupted, duplicate, low-resolution, and unlabelled images are removed automatically by cleaning — but an archive where more than 25% of the images are unreadable stays in review. The audit page shows the exact files, severity, and recommended actions.</p></div>
+  <div class="tutorial-warning"><span>ⓘ</span><p><strong>What does not work?</strong> A ZIP containing only loose images, a ZIP with just one class, a non-ZIP upload, corrupted images, or an image folder with no labels. The profile page will show the exact files and warnings to fix.</p></div>
 </section>
 {% endblock %}

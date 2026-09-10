@@ -15,28 +15,17 @@ from .services.trainer import DEFAULT_SPLIT, EPOCHS, run_training
 
 
 TRAINING_WORKFLOW_STAGES = (
-    ("stage_7_preprocessing", "Step 7 · Preprocessing", "Path mapping, load, resize, RGB conversion, pixel normalization, label encoding"),
-    ("stage_8_splitting", "Step 8 · Dataset splitting", "Train / validation / test split, stratified or group-aware"),
-    ("stage_9_preparation", "Step 9 · Training preparation", "Class-imbalance handling, augmentation (training set only), one-hot encoding"),
-    ("stage_10_training", "Step 10 · Training", "Train the model on the cleaned, training-ready dataset"),
-    ("stage_11_evaluation", "Step 11 · Evaluation", "Measure held-out and per-class performance with one protocol"),
-    ("stage_12_registry", "Step 12 · Registry", "Calibrate, save a versioned checkpoint, and record lineage"),
+    ("stage_6_experiments", "Stage 6 · Experiments", "Compare controlled benchmark variants"),
+    ("stage_7_modeling", "Stage 7 · Modeling", "Detect classes and configure the classification head"),
+    ("stage_8_evaluation", "Stage 8 · Evaluation", "Measure held-out and per-class performance"),
+    ("stage_9_reliability", "Stage 9 · Reliability", "Calibrate confidence and record reliability evidence"),
+    ("stage_10_xai", "Stage 10 · XAI", "Generate Grad-CAM at prediction time"),
+    ("stage_11_model_store", "Stage 11 · Model store", "Save versioned checkpoint and lineage"),
 )
 
 
 MAX_EPOCHS = 200
 _TRAINING_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="dermaaudit-training")
-
-
-def _json_safe(value):
-    """Replace non-finite floats so config JSON stays valid for strict stores."""
-    if isinstance(value, dict):
-        return {key: _json_safe(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_json_safe(item) for item in value]
-    if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
-        return None
-    return value
 
 
 def _training_context(split_defaults=None, epochs_default=EPOCHS):
@@ -95,7 +84,7 @@ def _complete_training(run_id, manage_connections=True):
         run.status = "completed"
         run.accuracy = result.pop("accuracy")
         run.macro_f1 = result.pop("macro_f1")
-        run.config = _json_safe({
+        run.config = {
             **(run.config or {}),
             **result,
             "execution": "completed",
@@ -105,7 +94,7 @@ def _complete_training(run_id, manage_connections=True):
                 "label": "Training complete",
                 "detail": "Checkpoint saved and ready for prediction.",
             },
-        })
+        }
         run.save(update_fields=["status", "accuracy", "macro_f1", "config"])
     finally:
         if manage_connections:
@@ -125,7 +114,7 @@ def start_training(request):
         dataset = _safe_dataset_lookup(request.POST.get("dataset"))
         architecture = request.POST.get("architecture", "efficientnet_b0")
         valid_architectures = {value for value, _label in TrainingRun.ARCHITECTURES}
-        experiment_variant = request.POST.get("experiment_variant", "fully_audited")
+        experiment_variant = request.POST.get("experiment_variant", "original")
         split_defaults = {
             "train": request.POST.get("train_split", DEFAULT_SPLIT[0]),
             "validation": request.POST.get("validation_split", DEFAULT_SPLIT[1]),

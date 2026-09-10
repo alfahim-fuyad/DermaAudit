@@ -58,10 +58,6 @@ def home(request):
             f"{len(failed_runs)} training run{'s' if len(failed_runs) != 1 else ''} need attention"
             if failed_runs else "All systems operational"
         ),
-        "cleaned_sample_count": sum(
-            int((dataset.pipeline or {}).get("configuration", {}).get("cleaned_sample_count") or 0)
-            for dataset in datasets
-        ),
         "active_training_runs": active_runs,
         "latest_prediction": predictions[0] if predictions else None,
         "radar_data": radar_data,
