@@ -3,9 +3,9 @@
 {% block content %}
 <section class="page-intro prediction-intro">
   <div>
-    <p class="eyebrow">CLASSIFICATION WORKSPACE / STAGES 10–12</p>
+    <p class="eyebrow">PART 2 · PREDICTION MODULE</p>
     <h1>Review an image</h1>
-    <p class="subhead">Run one model-assisted review with a clear evidence trail and a human decision at the end.</p>
+    <p class="subhead">Run one model-assisted review with the locally trained checkpoint — HAM10000 skin-lesion classification is the flagship use case.</p>
   </div>
   <div class="prediction-intro-meta">
     <span class="pill pill-mint">Privacy-first logging</span>
@@ -14,9 +14,10 @@
 </section>
 
 <div class="prediction-workflow-strip" aria-label="Prediction workflow">
-  <div class="prediction-workflow-step is-complete"><b>10</b><span><strong>Explain</strong><small>Grad-CAM artifact</small></span><i>Done</i></div>
-  <div class="prediction-workflow-step is-active"><b>11</b><span><strong>Model store</strong><small>Active checkpoint</small></span><i>Current</i></div>
-  <div class="prediction-workflow-step"><b>12</b><span><strong>Monitor</strong><small>Review and drift loop</small></span><i>Next</i></div>
+  <div class="prediction-workflow-step is-complete"><b>01</b><span><strong>Upload</strong><small>Skin image</small></span><i>Ready</i></div>
+  <div class="prediction-workflow-step is-active"><b>02</b><span><strong>Preprocess</strong><small>Resize, RGB, normalize</small></span><i>Current</i></div>
+  <div class="prediction-workflow-step"><b>03</b><span><strong>Model</strong><small>Trained checkpoint</small></span><i>Next</i></div>
+  <div class="prediction-workflow-step"><b>04</b><span><strong>Result</strong><small>Class + confidence</small></span><i>Then</i></div>
 </div>
 
 <div class="prediction-layout">
